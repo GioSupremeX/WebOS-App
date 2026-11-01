@@ -1,6 +1,6 @@
 [
   { "id": "micro-mages", "title": "Micro Mages", "platform": "NES", "core": "nes", "rom": "./games/micro-mages.nes", "genre": "Platformer", "tags": ["Co-op", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "platformer", "title": "Platformer", "platform": "Game Boy", "core": "gbc", "rom": "./games/platformer.gbc", "genre": "Platformer", "tags": ["Co-op", "Homebrew"], "requiresGamepad": false, "homebrew": true }
+  { "id": "platformer", "title": "Platformer", "platform": "Game Boy", "core": "gbc", "rom": "./games/platformergame.gbc", "genre": "Platformer", "tags": ["Co-op", "Homebrew"], "requiresGamepad": false, "homebrew": true }
 ]
 
 
