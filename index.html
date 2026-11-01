@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Actual TV Dashboard</title>
+    <!-- Εισαγωγή του απαραίτητου webOS library της LG -->
+    <script src="webOSjs-1.5.5/webOS.js" charset="utf-8"></script>
+    <style>
+        body { background: #050508; color: white; font-family: sans-serif; padding: 40px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .highlight { color: #00ffcc; font-size: 32px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Premium TV Dashboard</h1>
+    
+    <div class="grid">
+        <!-- Κάρτα Ώρας -->
+        <div class="card">
+            <h2>Time & Date</h2>
+            <div id="clock" class="highlight">00:00:00</div>
+        </div>
+        
+        <!-- Κάρτα Μνήμης (Πληροφορίες από την TV) -->
+        <div class="card">
+            <h2>TV System Storage</h2>
+            <div id="storage-info" class="highlight">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Λογική για το Ρολόι
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
+        }, 1000);
+
+        // 2. Λογική για να "τραβήξουμε" πληροφορίες από το hardware της τηλεόρασης
+        function getTVStorage() {
+            if (window.webOS) {
+                // Κλήση στο εσωτερικό σύστημα του webOS για τον αποθηκευτικό χώρο
+                webOS.service.request("luna://com.webos.service.attach", {
+                    method: "getDeviceStatus",
+                    parameters: { "subscribe": false },
+                    onSuccess: function(inResponse) {
+                        // Εδώ παίρνουμε τα δεδομένα της τηλεόρασης
+                        const freeSpace = (inResponse.storage.free / 1024 / 1024).toFixed(2);
+                        document.getElementById('storage-info').innerText = freeSpace + " MB Free";
+                    },
+                    onFailure: function(inError) {
+                        document.getElementById('storage-info').innerText = "Error fetching data";
+                    }
+                });
+            } else {
+                document.getElementById('storage-info').innerText = "Not running on LG TV browser";
+            }
+        }
+
+        // Εκτέλεση κατά τη φόρτωση
+        window.onload = function() {
+            getTVStorage();
+        }
+    </script>
+</body>
+</html>
