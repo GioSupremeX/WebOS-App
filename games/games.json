@@ -1,25 +1,6 @@
 [
   { "id": "micro-mages", "title": "Micro Mages", "platform": "NES", "core": "nes", "rom": "./games/micro-mages.nes", "genre": "Platformer", "tags": ["Co-op", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "battle-kid", "title": "Battle Kid: Fortress of Peril", "platform": "NES", "core": "nes", "rom": "./games/battle-kid.nes", "genre": "Platformer", "tags": ["Hard", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "super-bat-puncher", "title": "Super Bat Puncher", "platform": "NES", "core": "nes", "rom": "./games/super-bat-puncher.nes", "genre": "Platformer", "tags": ["Comedy", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "streemerz", "title": "Streemerz", "platform": "NES", "core": "nes", "rom": "./games/streemerz.nes", "genre": "Action", "tags": ["Classic", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "lawn-mower", "title": "Lawn Mower", "platform": "NES", "core": "nes", "rom": "./games/lawn-mower.nes", "genre": "Puzzle", "tags": ["Relaxing", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "fall-down-gb", "title": "Fall Down GB", "platform": "Game Boy", "core": "gb", "rom": "./games/fall-down-gb.gb", "genre": "Arcade", "tags": ["Arcade", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "galactic-wars", "title": "Galactic Wars", "platform": "Game Boy", "core": "gb", "rom": "./games/galactic-wars.gb", "genre": "Shooter", "tags": ["Shooter", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "tobu-tobu-girl", "title": "Tobu Tobu Girl", "platform": "Game Boy", "core": "gb", "rom": "./games/tobu-tobu-girl.gb", "genre": "Platformer", "tags": ["itch.io", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "2048-gb", "title": "2048 GB", "platform": "Game Boy", "core": "gb", "rom": "./games/2048-gb.gb", "genre": "Puzzle", "tags": ["Puzzle", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "snes-homebrew", "title": "SNES Homebrew Demo", "platform": "SNES", "core": "snes", "rom": "./games/snes-homebrew.smc", "genre": "Demo", "tags": ["Demo", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "genesis-homebrew", "title": "Genesis Homebrew Demo", "platform": "Genesis", "core": "genesis", "rom": "./games/genesis-homebrew.md", "genre": "Demo", "tags": ["Demo", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "jelly-bun", "title": "Jelly Bun", "platform": "Game Boy", "core": "gb", "rom": "./games/jelly-bun.gb", "genre": "Platformer", "tags": ["itch.io", "Bean Collecting", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "toad-in-the-hole", "title": "Toad in the Hole", "platform": "Game Boy", "core": "gb", "rom": "./games/toad-in-the-hole.gb", "genre": "Platformer", "tags": ["itch.io", "Goofy", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "space-raiders-gb", "title": "Space Raiders GB", "platform": "Game Boy", "core": "gb", "rom": "./games/space-raiders.gb", "genre": "Shooter", "tags": ["itch.io", "Action", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "cat-catch", "title": "Cat Catch", "platform": "Game Boy Color", "core": "gb", "rom": "./games/cat-catch.gbc", "genre": "Platformer", "tags": ["itch.io", "GBC", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "a-20-second-platformer", "title": "A 20 Second Platformer", "platform": "Game Boy", "core": "gb", "rom": "./games/20sec-platformer.gb", "genre": "Platformer", "tags": ["itch.io", "Speedrun", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "metal-slug-dmission", "title": "Metal Slug: D-Mission", "platform": "Game Boy", "core": "gb", "rom": "./games/metal-slug-dmission.gb", "genre": "Action", "tags": ["itch.io", "Demake", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "fall-from-space", "title": "Fall from Space", "platform": "Game Boy", "core": "gb", "rom": "./games/fall-from-space.gb", "genre": "RPG", "tags": ["itch.io", "Open World", "Homebrew"], "requiresGamepad": true, "homebrew": true },
-  { "id": "zoryad", "title": "Zoryad", "platform": "Game Boy", "core": "gb", "rom": "./games/zoryad.gb", "genre": "Metroidvania", "tags": ["itch.io", "Metroidvania", "Homebrew"], "requiresGamepad": true, "homebrew": true },
-  { "id": "squid-game-boy", "title": "Squid Game Boy", "platform": "Game Boy", "core": "gb", "rom": "./games/squid-game-boy.gb", "genre": "Action", "tags": ["itch.io", "Squid Game", "Homebrew"], "requiresGamepad": false, "homebrew": true },
-  { "id": "pine-creek", "title": "Pine Creek", "platform": "Game Boy Color", "core": "gb", "rom": "./games/pine-creek.gbc", "genre": "Adventure", "tags": ["itch.io", "Mystery", "Homebrew"], "requiresGamepad": true, "homebrew": true },
-  { "id": "jelly-bun-dx", "title": "Jelly Bun DX", "platform": "Game Boy", "core": "gb", "rom": "./games/jelly-bun-dx.gb", "genre": "Platformer", "tags": ["itch.io", "DX Edition", "Homebrew"], "requiresGamepad": false, "homebrew": true }
+  { "id": "platformer", "title": "Platformer", "platform": "Game Boy", "core": "gbc", "rom": "./games/platformer.gbc", "genre": "Platformer", "tags": ["Co-op", "Homebrew"], "requiresGamepad": false, "homebrew": true }
 ]
+
 
