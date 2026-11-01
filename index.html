@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Actual TV Dashboard</title>
-    <!-- Εισαγωγή του απαραίτητου webOS library της LG -->
+    <!-- Εισαγωγή του Bridge API της LG για τις ειδοποιήσεις -->
     <script src="webOSjs-1.5.5/webOS.js" charset="utf-8"></script>
     <style>
         body { background: #050508; color: white; font-family: sans-serif; padding: 40px; }
@@ -17,50 +17,64 @@
     <h1>Premium TV Dashboard</h1>
     
     <div class="grid">
-        <!-- Κάρτα Ώρας -->
         <div class="card">
             <h2>Time & Date</h2>
             <div id="clock" class="highlight">00:00:00</div>
         </div>
-        
-        <!-- Κάρτα Μνήμης (Πληροφορίες από την TV) -->
         <div class="card">
-            <h2>TV System Storage</h2>
-            <div id="storage-info" class="highlight">Loading...</div>
+            <h2>App Status</h2>
+            <div id="status-info" class="highlight">Running Live</div>
         </div>
     </div>
 
     <script>
-        // 1. Λογική για το Ρολόι
+        // 1. Ρολόι
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString();
         }, 1000);
 
-        // 2. Λογική για να "τραβήξουμε" πληροφορίες από το hardware της τηλεόρασης
-        function getTVStorage() {
+        // 2. Σύστημα ειδοποιήσεων LG webOS
+        function showTVNotification(message) {
             if (window.webOS) {
-                // Κλήση στο εσωτερικό σύστημα του webOS για τον αποθηκευτικό χώρο
-                webOS.service.request("luna://com.webos.service.attach", {
-                    method: "getDeviceStatus",
-                    parameters: { "subscribe": false },
-                    onSuccess: function(inResponse) {
-                        // Εδώ παίρνουμε τα δεδομένα της τηλεόρασης
-                        const freeSpace = (inResponse.storage.free / 1024 / 1024).toFixed(2);
-                        document.getElementById('storage-info').innerText = freeSpace + " MB Free";
-                    },
-                    onFailure: function(inError) {
-                        document.getElementById('storage-info').innerText = "Error fetching data";
-                    }
+                webOS.service.request("luna://com.webos.notification", {
+                    method: "createToast",
+                    parameters: { "message": message },
+                    onSuccess: function(res) { console.log("Notification sent"); },
+                    onFailure: function(err) { console.log("Notification failed", err); }
                 });
             } else {
-                document.getElementById('storage-info').innerText = "Not running on LG TV browser";
+                console.log("Browser Notification: " + message);
+            }
+        }
+
+        // 3. Έλεγχος για updates στο υπόβαθρο
+        let currentEtag = null;
+
+        async function checkForUpdates() {
+            try {
+                // Κάνουμε ένα ελαφρύ request (HEAD) στο GitHub για να δούμε αν άλλαξε το αρχείο
+                const response = await fetch(window.location.href, { method: 'HEAD', cache: 'no-cache' });
+                const newEtag = response.headers.get('ETag') || response.headers.get('Last-Modified');
+                
+                if (currentEtag !== null && currentEtag !== newEtag) {
+                    showTVNotification("Checking for updates... New version found! Reloading...");
+                    setTimeout(() => {
+                        window.location.reload(true); // Αναγκαστικό reload της τηλεόρασης με τα νέα αρχεία
+                    }, 3000);
+                }
+                currentEtag = newEtag;
+            } catch (error) {
+                console.error("Update check failed", error);
             }
         }
 
         // Εκτέλεση κατά τη φόρτωση
         window.onload = function() {
-            getTVStorage();
+            showTVNotification("Dashboard Connected & Fully Updated!");
+            
+            // Έλεγχος για updates κάθε 1 λεπτό (60000ms)
+            setInterval(checkForUpdates, 60000);
         }
     </script>
 </body>
