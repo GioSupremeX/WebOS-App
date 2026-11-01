@@ -148,9 +148,17 @@
         // ---------- Dashboard: clock ----------
         function updateClock() {
             const now = new Date();
-            const opts = { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-            document.getElementById('dash-clock').textContent = now.toLocaleTimeString('el-GR', opts);
-            document.getElementById('dash-date').textContent = now.toLocaleDateString('el-GR', { timeZone: 'Europe/Athens', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const clockEl = document.getElementById('dash-clock');
+            const dateEl = document.getElementById('dash-date');
+            if (!clockEl || !dateEl) return;
+            try {
+                const opts = { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                clockEl.textContent = now.toLocaleTimeString('el-GR', opts);
+                dateEl.textContent = now.toLocaleDateString('el-GR', { timeZone: 'Europe/Athens', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            } catch (e) {
+                clockEl.textContent = now.toLocaleTimeString();
+                dateEl.textContent = now.toLocaleDateString();
+            }
         }
         setInterval(updateClock, 1000);
         updateClock();
@@ -184,9 +192,12 @@
         async function updateWeather() {
             const tempEl = document.getElementById('dash-weather');
             const descEl = document.getElementById('dash-weather-desc');
+            if (!tempEl || !descEl) return;
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 8000);
             try {
                 const url = 'https://api.open-meteo.com/v1/forecast?latitude=36.4349&longitude=28.2176&current_weather=true';
-                const res = await fetch(url, { cache: 'no-store' });
+                const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
                 const data = await res.json();
                 const cw = data.current_weather;
                 tempEl.textContent = (cw.temperature != null ? cw.temperature.toFixed(1) : '--') + '°C';
@@ -194,6 +205,8 @@
             } catch (e) {
                 tempEl.textContent = '--°C';
                 descEl.textContent = 'Weather unavailable';
+            } finally {
+                clearTimeout(timer);
             }
         }
         updateWeather();
@@ -260,8 +273,9 @@
                 + '<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#game{width:100%;height:100%}</style>'
                 + '</head><body><div id="game"></div>'
                 + '<script>window.EJS_player="#game";window.EJS_core=' + core + ';window.EJS_gameUrl=' + rom
-                + ';window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";window.EJS_startOnLoaded=true;</script>'
-                + '<script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>'
+                + ';window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";window.EJS_startOnLoaded=true;<\/script>'
+
+                + '<script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>'
                 + '</body></html>';
         }
         function launchGame(index) {
