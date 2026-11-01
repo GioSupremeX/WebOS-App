@@ -1,81 +1,257 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Actual TV Dashboard</title>
-    <!-- Εισαγωγή του Bridge API της LG για τις ειδοποιήσεις -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cloud Retro Gaming Hub</title>
     <script src="webOSjs-1.5.5/webOS.js" charset="utf-8"></script>
     <style>
-        body { background: #050508; color: white; font-family: sans-serif; padding: 40px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .highlight { color: #00ffcc; font-size: 32px; font-weight: bold; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; height: 100%; background: #0a0a14; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+        body { display: flex; flex-direction: column; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background: linear-gradient(90deg, #1a1a2e, #0a0a14); border-bottom: 1px solid #2a2a4a; }
+        h1 { font-size: 34px; margin: 0; color: #00ffcc; text-shadow: 0 0 14px #00ffcc55; }
+        #status { font-size: 18px; color: #aaa; }
+        main { flex: 1; padding: 24px 40px; overflow: auto; }
+        .section-title { font-size: 24px; color: #00ffcc; margin: 0 0 16px 0; }
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 24px; }
+        .game-card { background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 16px; padding: 16px; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; outline: none; }
+        .game-card.focused { border-color: #00ffcc; box-shadow: 0 0 28px #00ffcc66; transform: scale(1.05); }
+        .cover { height: 150px; border-radius: 10px; background: linear-gradient(135deg, #3a3a6a, #1a1a3a); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: #00ffcc; margin-bottom: 12px; letter-spacing: 2px; }
+        .title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+        .platform { font-size: 16px; color: #888; }
+        .overlay { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; }
+        .overlay.hidden { display: none; }
+        .emulator-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: #111; border-bottom: 1px solid #333; }
+        #emulator-title { font-size: 22px; color: #00ffcc; }
+        #close-emulator { background: #333; color: #fff; border: 1px solid #555; padding: 10px 22px; border-radius: 8px; font-size: 18px; cursor: pointer; }
+        #emulator-frame { flex: 1; width: 100%; border: none; background: #000; }
+        .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #00ffcc; color: #000; padding: 16px 32px; border-radius: 12px; font-size: 20px; font-weight: 600; z-index: 200; box-shadow: 0 8px 24px #0008; transition: opacity .3s; }
+        .toast.hidden { display: none; }
+        .hint { position: fixed; bottom: 16px; right: 24px; font-size: 14px; color: #555; }
     </style>
 </head>
 <body>
-
-    <h1>Premium TV Dashboard</h1>
-    
-    <div class="grid">
-        <div class="card">
-            <h2>Time & Date</h2>
-            <div id="clock" class="highlight">00:00:00</div>
+    <header>
+        <h1>Cloud Retro Gaming Hub</h1>
+        <div id="status">Ready</div>
+    </header>
+    <main>
+        <h2 class="section-title">Game Library</h2>
+        <div id="game-grid" class="game-grid" tabindex="0"></div>
+    </main>
+    <div id="emulator-overlay" class="overlay hidden">
+        <div class="emulator-header">
+            <span id="emulator-title">Game</span>
+            <button id="close-emulator">Back (Esc)</button>
         </div>
-        <div class="card">
-            <h2>App Status</h2>
-            <div id="status-info" class="highlight">Running Live</div>
-        </div>
+        <iframe id="emulator-frame" allowfullscreen allow="autoplay; gamepad"></iframe>
     </div>
-
+    <div id="toast" class="toast hidden"></div>
+    <div class="hint">D-Pad / Arrow keys to navigate &bull; Enter to play &bull; Back/Esc to exit</div>
     <script>
-        // 1. Ρολόι
-        setInterval(() => {
-            const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString();
-        }, 1000);
-
-        // 2. Σύστημα ειδοποιήσεων LG webOS
+        let GAMES = [
+            { id: 'smb',   title: 'Super Mario Bros.',     platform: 'NES',       core: 'nes',     rom: './games/super-mario-bros.nes' },
+            { id: 'zelda', title: 'The Legend of Zelda',   platform: 'NES',       core: 'nes',     rom: './games/legend-of-zelda.nes' },
+            { id: 'tetris',title: 'Tetris',                platform: 'Game Boy',  core: 'gb',      rom: './games/tetris.gb' },
+            { id: 'pkred', title: 'Pokemon Red',           platform: 'Game Boy',  core: 'gb',      rom: './games/pokemon-red.gb' },
+            { id: 'sonic', title: 'Sonic the Hedgehog',    platform: 'Genesis',   core: 'genesis', rom: './games/sonic.md' },
+            { id: 'smk',   title: 'Super Mario Kart',      platform: 'SNES',      core: 'snes',    rom: './games/super-mario-kart.smc' }
+        ];
+        const grid = document.getElementById('game-grid');
+        const statusEl = document.getElementById('status');
+        const overlay = document.getElementById('emulator-overlay');
+        const frame = document.getElementById('emulator-frame');
+        const titleEl = document.getElementById('emulator-title');
+        let focused = 0;
+        let inEmulator = false;
+        function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        async function loadGames() {
+            try {
+                const res = await fetch('./games/games.json', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length) GAMES = data;
+                }
+            } catch (e) { console.log('No games.json found, using built-in list'); }
+            renderGames();
+        }
+        function renderGames() {
+            grid.innerHTML = '';
+            if (!GAMES.length) {
+                grid.innerHTML = '<p style="color:#888">No games found. Add ROMs to ./games/ and a games.json manifest.</p>';
+                return;
+            }
+            GAMES.forEach((g, i) => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.dataset.index = i;
+                card.tabIndex = -1;
+                card.innerHTML = '<div class="cover">' + escapeHtml((g.platform || '?').slice(0, 6)) + '</div>'
+                    + '<div class="title">' + escapeHtml(g.title) + '</div>'
+                    + '<div class="platform">' + escapeHtml(g.platform) + '</div>';
+                card.addEventListener('click', () => launchGame(i));
+                grid.appendChild(card);
+            });
+            setFocus(0);
+        }
+        function cols() {
+            const s = getComputedStyle(grid).gridTemplateColumns;
+            const n = s ? s.trim().split(/\s+/).filter(Boolean).length : 1;
+            return n || 1;
+        }
+        function setFocus(i) {
+            const cards = grid.querySelectorAll('.game-card');
+            if (!cards.length) return;
+            let idx = i;
+            if (idx < 0) idx = 0;
+            if (idx >= cards.length) idx = cards.length - 1;
+            focused = idx;
+            cards.forEach((card, k) => card.classList.toggle('focused', k === focused));
+            try { cards[focused].scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+        }
+        function moveFocus(delta) {
+            const cards = grid.querySelectorAll('.game-card');
+            if (!cards.length) return;
+            let next = focused + delta;
+            if (next < 0) next = 0;
+            if (next >= cards.length) next = cards.length - 1;
+            setFocus(next);
+        }
+        function buildSrcdoc(game) {
+            const core = JSON.stringify(game.core || 'nes');
+            const rom = JSON.stringify(game.rom || '');
+            return '<!DOCTYPE html><html><head><meta charset="utf-8">'
+                + '<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#game{width:100%;height:100%}</style>'
+                + '</head><body><div id="game"></div>'
+                + '<script>window.EJS_player="#game";window.EJS_core=' + core + ';window.EJS_gameUrl=' + rom
+                + ';window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";window.EJS_startOnLoaded=true;</script>'
+                + '<script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>'
+                + '</body></html>';
+        }
+        function launchGame(index) {
+            const game = GAMES[index];
+            if (!game) return;
+            inEmulator = true;
+            titleEl.textContent = game.title + '  (' + game.platform + ')';
+            frame.srcdoc = buildSrcdoc(game);
+            overlay.classList.remove('hidden');
+            statusEl.textContent = 'Playing: ' + game.title;
+            showTVNotification('Launching ' + game.title + '...');
+            setTimeout(() => { try { frame.focus(); } catch (e) {} }, 1200);
+        }
+        function closeEmulator() {
+            inEmulator = false;
+            frame.srcdoc = '';
+            overlay.classList.add('hidden');
+            statusEl.textContent = 'Ready';
+            showTVNotification('Returned to menu');
+        }
+        document.getElementById('close-emulator').addEventListener('click', closeEmulator);
+        function showToast(message) {
+            const t = document.getElementById('toast');
+            t.textContent = message;
+            t.classList.remove('hidden');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.add('hidden'), 3000);
+        }
         function showTVNotification(message) {
-            if (window.webOS) {
-                webOS.service.request("luna://com.webos.notification", {
-                    method: "createToast",
-                    parameters: { "message": message },
-                    onSuccess: function(res) { console.log("Notification sent"); },
-                    onFailure: function(err) { console.log("Notification failed", err); }
-                });
+            if (window.webOS && webOS.service && typeof webOS.service.request === 'function') {
+                try {
+                    webOS.service.request('luna://com.webos.notification', {
+                        method: 'createToast',
+                        parameters: { message: message },
+                        onSuccess: function () { console.log('toast sent'); },
+                        onFailure: function (err) { console.warn('toast failed', err); showToast(message); }
+                    });
+                } catch (e) { console.warn(e); showToast(message); }
             } else {
-                console.log("Browser Notification: " + message);
+                showToast(message);
+            }
+            showToast(message);
+        }
+        function isBackKey(k) { return k === 8 || k === 27 || k === 461 || k === 10009 || k === 4097; }
+        window.addEventListener('keydown', (e) => {
+            if (inEmulator) {
+                if (isBackKey(e.keyCode)) {
+                    e.preventDefault();
+                    closeEmulator();
+                }
+                return;
+            }
+            const c = cols();
+            switch (e.keyCode) {
+                case 37: e.preventDefault(); moveFocus(-1); break;
+                case 39: e.preventDefault(); moveFocus(1); break;
+                case 38: e.preventDefault(); moveFocus(-c); break;
+                case 40: e.preventDefault(); moveFocus(c); break;
+                case 13: e.preventDefault(); launchGame(focused); break;
+                default:
+                    if (isBackKey(e.keyCode)) e.preventDefault();
+            }
+        });
+        // ---------- Gamepad API polling ----------
+        const gpPrev = {};
+        let gpCooldown = 0;
+        function pollGamepad() {
+            requestAnimationFrame(pollGamepad);
+            if (inEmulator) return;
+            const now = performance.now();
+            if (now < gpCooldown) return;
+            const gps = (navigator.getGamepads && navigator.getGamepads()) || [];
+            for (const gp of gps) {
+                if (!gp) continue;
+                const btn = (i) => !!(gp.buttons[i] && gp.buttons[i].pressed);
+                const axes = gp.axes || [];
+                const left  = btn(14) || (axes[0] || 0) < -0.5;
+                const right = btn(15) || (axes[0] || 0) > 0.5;
+                const up    = btn(12) || (axes[1] || 0) < -0.5;
+                const down  = btn(13) || (axes[1] || 0) > 0.5;
+                const aBtn  = btn(0);
+                const bBtn  = btn(1);
+                const key = 'gp' + gp.index;
+                const prev = gpPrev[key] || {};
+                const c = cols();
+                if (left  && !prev.left)  { moveFocus(-1);     gpCooldown = now + 180; }
+                else if (right && !prev.right) { moveFocus(1);  gpCooldown = now + 180; }
+                else if (up    && !prev.up)    { moveFocus(-c); gpCooldown = now + 180; }
+                else if (down  && !prev.down)  { moveFocus(c);  gpCooldown = now + 180; }
+                if (aBtn && !prev.a) { launchGame(focused); gpCooldown = now + 300; }
+                if (bBtn && !prev.b) { /* reserved for back */ }
+                gpPrev[key] = { left, right, up, down, a: aBtn, b: bBtn };
             }
         }
 
-        // 3. Έλεγχος για updates στο υπόβαθρο
-        let currentEtag = null;
-
+        // ---------- Auto-update checker (every 1 minute) ----------
+        let lastHash = null;
         async function checkForUpdates() {
             try {
-                // Κάνουμε ένα ελαφρύ request (HEAD) στο GitHub για να δούμε αν άλλαξε το αρχείο
-                const response = await fetch(window.location.href, { method: 'HEAD', cache: 'no-cache' });
-                const newEtag = response.headers.get('ETag') || response.headers.get('Last-Modified');
-                
-                if (currentEtag !== null && currentEtag !== newEtag) {
-                    showTVNotification("Checking for updates... New version found! Reloading...");
-                    setTimeout(() => {
-                        window.location.reload(true); // Αναγκαστικό reload της τηλεόρασης με τα νέα αρχεία
-                    }, 3000);
+                const url = window.location.href.split('?')[0] + '?_cb=' + Date.now();
+                const res = await fetch(url, { cache: 'no-store' });
+                const text = await res.text();
+                const hash = text.length + '|' + text.slice(0, 120) + '|' + text.slice(-120);
+                if (lastHash !== null && lastHash !== hash) {
+                    showTVNotification('Update found! Reloading...');
+                    statusEl.textContent = 'Update found! Reloading...';
+                    setTimeout(() => window.location.reload(), 3000);
+                    return;
                 }
-                currentEtag = newEtag;
-            } catch (error) {
-                console.error("Update check failed", error);
+                lastHash = hash;
+                statusEl.textContent = 'Ready  •  Last checked ' + new Date().toLocaleTimeString();
+            } catch (err) {
+                console.error('Update check failed', err);
             }
         }
 
-        // Εκτέλεση κατά τη φόρτωση
-        window.onload = function() {
-            showTVNotification("Dashboard Connected & Fully Updated!");
-            
-            // Έλεγχος για updates κάθε 1 λεπτό (60000ms)
+        // ---------- Init ----------
+        window.addEventListener('load', async () => {
+            showTVNotification('Cloud Retro Gaming Hub loaded');
+            await loadGames();
+            requestAnimationFrame(pollGamepad);
+            await checkForUpdates();
             setInterval(checkForUpdates, 60000);
-        }
+        });
     </script>
 </body>
 </html>
+
