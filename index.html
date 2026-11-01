@@ -29,11 +29,17 @@
         .storage-fill { height: 100%; background: linear-gradient(90deg, #00ffcc, #00aa88); }
         .section-title { font-size: 24px; color: #00ffcc; margin: 0 0 16px 0; }
         .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 24px; }
-        .game-card { background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 16px; padding: 16px; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; outline: none; }
+        .game-card { position: relative; background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 16px; padding: 16px; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; outline: none; }
         .game-card.focused { border-color: #00ffcc; box-shadow: 0 0 28px #00ffcc66; transform: scale(1.05); }
+        .game-card.gamepad-required { border-color: #ff6b6b; }
+        .game-card.gamepad-required.focused { border-color: #ff6b6b; box-shadow: 0 0 28px #ff6b6b66; }
         .cover { height: 150px; border-radius: 10px; background: linear-gradient(135deg, #3a3a6a, #1a1a3a); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: #00ffcc; margin-bottom: 12px; letter-spacing: 2px; }
         .title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
         .platform { font-size: 16px; color: #888; }
+        .game-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .tag { background: #2a2a4a; color: #aaa; border: 1px solid #3a3a5a; border-radius: 6px; padding: 4px 8px; font-size: 12px; white-space: nowrap; }
+        .tag.gamepad { background: #ff4444; color: #fff; border-color: #ff6b6b; }
+        .tag.remote { background: #00ffcc; color: #000; border-color: #00ffcc; font-weight: bold; }
         .overlay { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; }
         .overlay.hidden { display: none; }
         .emulator-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: #111; border-bottom: 1px solid #333; }
@@ -42,17 +48,40 @@
         #emulator-frame { flex: 1; width: 100%; border: none; background: #000; }
         .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #00ffcc; color: #000; padding: 16px 32px; border-radius: 12px; font-size: 20px; font-weight: 600; z-index: 200; box-shadow: 0 8px 24px #0008; transition: opacity .3s; }
         .toast.hidden { display: none; }
+        .search-bar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+        .search-input { flex: 1; min-width: 200px; background: #1a1a2e; color: #fff; border: 2px solid #2a2a4a; border-radius: 10px; padding: 10px 16px; font-size: 18px; outline: none; }
+        .search-input:focus { border-color: #00ffcc; }
+        .filter-btn { background: #1a1a2e; color: #aaa; border: 2px solid #2a2a4a; border-radius: 10px; padding: 10px 16px; font-size: 16px; cursor: pointer; }
+        .filter-btn.active { color: #00ffcc; border-color: #00ffcc; background: #12202a; }
+        .fav-star { position: absolute; top: 8px; right: 8px; font-size: 24px; cursor: pointer; user-select: none; }
+        .game-card { position: relative; }
+        .net-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        .net-status.online { background: #00ffcc; }
+        .net-status.offline { background: #ff4444; }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2a2a4a; }
+        .settings-row label { font-size: 18px; }
+        .settings-row select, .settings-row button { background: #1a1a2e; color: #fff; border: 2px solid #2a2a4a; border-radius: 8px; padding: 8px 12px; font-size: 16px; cursor: pointer; }
+        .help-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 150; display: flex; align-items: center; justify-content: center; }
+        .help-overlay.hidden { display: none; }
+        .help-card { background: #1a1a2e; border: 2px solid #00ffcc; border-radius: 16px; padding: 32px; max-width: 600px; width: 90%; }
+        .help-card h2 { color: #00ffcc; margin: 0 0 16px 0; }
+        .help-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2a2a4a; font-size: 16px; }
+        .help-key { color: #00ffcc; font-weight: bold; }
+        .recent-item { background: #1a1a2e; border-radius: 8px; padding: 8px 12px; margin: 4px 0; font-size: 16px; cursor: pointer; }
+        .recent-item:hover { background: #2a2a4a; }
         .hint { position: fixed; bottom: 16px; right: 24px; font-size: 14px; color: #555; }
     </style>
 </head>
 <body>
     <header>
         <h1>Cloud Retro Gaming Hub</h1>
-        <div id="status">Ready</div>
+        <div id="status">Ready <span id="net-status" class="net-status"></span></div>
     </header>
     <div class="tab-bar" id="tab-bar">
         <button class="tab active focused" data-tab="dashboard" id="tab-dashboard">Dashboard</button>
         <button class="tab" data-tab="games" id="tab-games">Gaming Hub</button>
+        <button class="tab" data-tab="settings" id="tab-settings">Settings</button>
+        <button class="tab" data-tab="help" id="tab-help">Help</button>
     </div>
     <main>
         <section id="panel-dashboard" class="panel active">
@@ -69,6 +98,10 @@
                     <div class="storage-bar"><div id="storage-fill" class="storage-fill" style="width:0%"></div></div>
                 </div>
                 <div class="dash-card">
+                    <h3>Recently Played</h3>
+                    <div id="recent-list">None yet</div>
+                </div>
+                <div class="dash-card">
                     <h3>Rhodes Weather</h3>
                     <div id="dash-weather" class="weather-temp">--°C</div>
                     <div id="dash-weather-desc" class="sub">Loading...</div>
@@ -77,7 +110,68 @@
         </section>
         <section id="panel-games" class="panel">
             <h2 class="section-title">Game Library</h2>
+            <div class="search-bar">
+                <input id="search-input" class="search-input" type="text" placeholder="Search games..." />
+                <button id="filter-all" class="filter-btn active">All</button>
+                <button id="filter-fav" class="filter-btn">Favorites</button>
+                <button id="filter-nes" class="filter-btn">NES</button>
+                <button id="filter-gb" class="filter-btn">GB</button>
+                <button id="filter-gamepad" class="filter-btn">Gamepad</button>
+                <button id="filter-remote" class="filter-btn">Remote Only</button>
+            </div>
             <div id="game-grid" class="game-grid" tabindex="0"></div>
+        </section>
+
+        <section id="panel-settings" class="panel">
+            <h2 class="section-title">Settings</h2>
+            <div class="dash-card">
+                <div class="settings-row">
+                    <label>Theme</label>
+                    <select id="theme-select">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <label>Update check interval</label>
+                    <select id="update-interval">
+                        <option value="60000">1 minute</option>
+                        <option value="300000">5 minutes</option>
+                        <option value="600000">10 minutes</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <label>Clear favorites</label>
+                    <button id="clear-favs">Clear</button>
+                </div>
+                <div class="settings-row">
+                    <label>Clear recently played</label>
+                    <button id="clear-recent">Clear</button>
+                </div>
+                <div class="settings-row">
+                    <label>Version</label>
+                    <span class="sub">Cloud Retro Gaming Hub v2.0</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="panel-help" class="panel">
+            <h2 class="section-title">Help & Controls</h2>
+            <div class="dash-card">
+                <div class="help-row"><span class="help-key">Arrow Keys / D-Pad</span><span>Navigate tabs & games</span></div>
+                <div class="help-row"><span class="help-key">Enter / OK</span><span>Select / Launch game</span></div>
+                <div class="help-row"><span class="help-key">Up (from first row)</span><span>Return to tabs</span></div>
+                <div class="help-row"><span class="help-key">Down</span><span>Enter content</span></div>
+                <div class="help-row"><span class="help-key">Back / Esc</span><span>Exit emulator / Close</span></div>
+                <div class="help-row"><span class="help-key">Left / Right (tabs)</span><span>Switch tabs</span></div>
+                <div class="help-row"><span class="help-key">Gamepad A</span><span>Select / Launch</span></div>
+                <div class="help-row"><span class="help-key">Gamepad B</span><span>Back</span></div>
+                <div class="help-row"><span class="help-key">Gamepad D-Pad</span><span>Navigate</span></div>
+            </div>
+            <div class="dash-card" style="margin-top:16px">
+                <h3>Adding Games</h3>
+                <p class="sub">Place ROM files in ./games/ and update games.json. Only use ROMs you own or that are freely distributable (homebrew/public domain).</p>
+            </div>
         </section>
     </main>
     <div id="emulator-overlay" class="overlay hidden">
@@ -87,11 +181,19 @@
         </div>
         <iframe id="emulator-frame" allowfullscreen allow="autoplay; gamepad"></iframe>
     </div>
+    <div id="help-overlay" class="help-overlay hidden">
+        <div class="help-card">
+            <h2>Quick Help</h2>
+            <div class="help-row"><span class="help-key">?</span><span>Toggle this help</span></div>
+            <div class="help-row"><span class="help-key">Esc</span><span>Close</span></div>
+        </div>
+    </div>
+
     <div id="toast" class="toast hidden"></div>
     <div class="hint">Tabs: Left/Right | Enter select | Up to tabs | Down to content</div>
     <script>
         // ---------- State ----------
-        const TABS = ['dashboard', 'games'];
+        const TABS = ['dashboard', 'games', 'settings', 'help'];
         let activeTab = 'dashboard';
         let focusZone = 'tabs';
         let tabFocusIndex = 0;
@@ -231,16 +333,23 @@
             }
             GAMES.forEach((g, i) => {
                 const card = document.createElement('div');
-                card.className = 'game-card';
+                card.className = 'game-card' + (g.requiresGamepad ? ' gamepad-required' : '');
                 card.dataset.index = i;
                 card.tabIndex = -1;
-                card.innerHTML = '<div class="cover">' + escapeHtml((g.platform || '?').slice(0, 6)) + '</div>'
+                const tagsHtml = (g.tags || []).map(t => '<span class="tag' + (t.toLowerCase().includes('gamepad') || g.requiresGamepad ? ' gamepad' : '') + '">' + escapeHtml(t) + '</span>').join('');
+                const ctrlTag = g.requiresGamepad ? '<span class="tag gamepad">GAMEPAD</span>' : '<span class="tag remote">REMOTE</span>';
+                card.innerHTML = '<div class="fav-star">' + (isFav(g.id) ? '★' : '☆') + '</div>'
+                    + '<div class="cover">' + escapeHtml((g.platform || '?').slice(0, 6)) + '</div>'
                     + '<div class="title">' + escapeHtml(g.title) + '</div>'
-                    + '<div class="platform">' + escapeHtml(g.platform) + '</div>';
+                    + '<div class="platform">' + escapeHtml(g.platform) + (g.genre ? ' • ' + escapeHtml(g.genre) : '') + '</div>'
+                    + '<div class="game-tags">' + ctrlTag + tagsHtml + '</div>';
                 card.addEventListener('click', () => launchGame(i));
+                const star = card.querySelector('.fav-star');
+                star.addEventListener('click', (e) => { e.stopPropagation(); toggleFav(g.id); });
                 grid.appendChild(card);
             });
             setFocus(0);
+            applyGameFilter();
         }
         function cols() {
             const s = getComputedStyle(grid).gridTemplateColumns;
@@ -281,6 +390,9 @@
         function launchGame(index) {
             const game = GAMES[index];
             if (!game) return;
+            if (game.requiresGamepad) {
+                showTVNotification(game.title + ' requires a gamepad. Connect a controller to play.');
+            }
             inEmulator = true;
             titleEl.textContent = game.title + '  (' + game.platform + ')';
             frame.srcdoc = buildSrcdoc(game);
@@ -326,6 +438,12 @@
         function isBackKey(k) { return k === 8 || k === 27 || k === 461 || k === 10009 || k === 4097; }
 
         window.addEventListener('keydown', (e) => {
+            const isInput = document.activeElement && document.activeElement.tagName === 'INPUT';
+            if (!isInput && (e.keyCode === 191 || e.keyCode === 72)) {
+                toggleHelp();
+                e.preventDefault();
+                return;
+            }
             if (inEmulator) {
                 if (isBackKey(e.keyCode)) {
                     e.preventDefault();
@@ -429,13 +547,189 @@
             }
         }
 
+        // ---------- Favorites & Recently Played ----------
+        const FAV_KEY = 'crgh_favs';
+        const RECENT_KEY = 'crgh_recent';
+        const SETTINGS_KEY = 'crgh_settings';
+        function getFavs() { try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch (e) { return []; } }
+        function setFavs(v) { try { localStorage.setItem(FAV_KEY, JSON.stringify(v)); } catch (e) {} }
+        function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (e) { return []; } }
+        function setRecent(v) { try { localStorage.setItem(RECENT_KEY, JSON.stringify(v)); } catch (e) {} }
+        function getSettings() { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); } catch (e) { return {}; } }
+        function setSettings(v) { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(v)); } catch (e) {} }
+
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        function isFav(id) { return getFavs().indexOf(id) !== -1; }
+        function toggleFav(id) {
+            const favs = getFavs();
+            const idx = favs.indexOf(id);
+            if (idx === -1) favs.push(id); else favs.splice(idx, 1);
+            setFavs(favs);
+            renderGames();
+        }
+        function addRecent(game) {
+            const recent = getRecent().filter(r => r.id !== game.id);
+            recent.unshift({ id: game.id, title: game.title, platform: game.platform });
+            setRecent(recent.slice(0, 8));
+            renderRecent();
+        }
+        function renderRecent() {
+            const el = document.getElementById('recent-list');
+            if (!el) return;
+            const recent = getRecent();
+            if (!recent.length) { el.textContent = 'None yet'; return; }
+            el.innerHTML = recent.map(r => '<div class="recent-item" data-id="' + r.id + '">' + escapeHtml(r.title) + ' <span class="sub">(' + escapeHtml(r.platform) + ')</span></div>').join('');
+            el.querySelectorAll('.recent-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const g = GAMES.find(x => x.id === item.dataset.id);
+                    if (g) launchGame(GAMES.indexOf(g));
+                });
+            });
+        }
+
+        function applyGameFilter() {
+            const cards = grid.querySelectorAll('.game-card');
+            cards.forEach((card, i) => {
+                const g = GAMES[i];
+                if (!g) return;
+                let show = true;
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    show = g.title.toLowerCase().indexOf(q) !== -1 || (g.platform || '').toLowerCase().indexOf(q) !== -1 || (g.genre || '').toLowerCase().indexOf(q) !== -1;
+                }
+                if (show && currentFilter === 'fav') show = isFav(g.id);
+                if (show && currentFilter === 'nes') show = g.platform === 'NES';
+                if (show && currentFilter === 'gb') show = g.platform === 'Game Boy';
+                if (show && currentFilter === 'gamepad') show = g.requiresGamepad === true;
+                if (show && currentFilter === 'remote') show = g.requiresGamepad !== true;
+                card.style.display = show ? '' : 'none';
+            });
+        }
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => { searchQuery = e.target.value; applyGameFilter(); });
+        }
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (btn.id === 'filter-all') currentFilter = 'all';
+                else if (btn.id === 'filter-fav') currentFilter = 'fav';
+                else if (btn.id === 'filter-nes') currentFilter = 'nes';
+                else if (btn.id === 'filter-gb') currentFilter = 'gb';
+                else if (btn.id === 'filter-gamepad') currentFilter = 'gamepad';
+                else if (btn.id === 'filter-remote') currentFilter = 'remote';
+                applyGameFilter();
+            });
+        });
+        const _origRenderGames = renderGames;
+        renderGames = function() {
+            grid.innerHTML = '';
+            if (!GAMES.length) {
+                grid.innerHTML = '<p style="color:#888">No games found. Add ROMs to ./games/ and a games.json manifest.</p>';
+                return;
+            }
+            GAMES.forEach((g, i) => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.dataset.index = i;
+                card.tabIndex = -1;
+                card.innerHTML = '<div class="fav-star">' + (isFav(g.id) ? '★' : '☆') + '</div>'
+                    + '<div class="cover">' + escapeHtml((g.platform || '?').slice(0, 6)) + '</div>'
+                    + '<div class="title">' + escapeHtml(g.title) + '</div>'
+                    + '<div class="platform">' + escapeHtml(g.platform) + (g.genre ? ' • ' + escapeHtml(g.genre) : '') + '</div>';
+                card.addEventListener('click', () => launchGame(i));
+                const star = card.querySelector('.fav-star');
+                star.addEventListener('click', (e) => { e.stopPropagation(); toggleFav(g.id); });
+                grid.appendChild(card);
+            });
+            setFocus(0);
+            applyGameFilter();
+        };
+
+        const _origLaunch = launchGame;
+        launchGame = function(index) {
+            const game = GAMES[index];
+            if (game) addRecent(game);
+            return _origLaunch(index);
+        };
+
+        // ---------- Network status ----------
+        function updateNetStatus() {
+            const el = document.getElementById('net-status');
+            if (!el) return;
+            if (navigator.onLine) { el.className = 'net-status online'; el.title = 'Online'; }
+            else { el.className = 'net-status offline'; el.title = 'Offline'; }
+        }
+        window.addEventListener('online', updateNetStatus);
+        window.addEventListener('offline', updateNetStatus);
+        updateNetStatus();
+
+        // ---------- Settings ----------
+        const themeSelect = document.getElementById('theme-select');
+        const updateIntervalSelect = document.getElementById('update-interval');
+        if (themeSelect) {
+            const s = getSettings();
+            if (s.theme) themeSelect.value = s.theme;
+            themeSelect.addEventListener('change', () => {
+                const s = getSettings();
+                s.theme = themeSelect.value;
+                setSettings(s);
+                applyTheme(s.theme);
+            });
+            applyTheme(s.theme || 'dark');
+        }
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.body.style.background = '#f0f0f5';
+                document.body.style.color = '#111';
+            } else {
+                document.body.style.background = '#0a0a14';
+                document.body.style.color = '#fff';
+            }
+        }
+        if (updateIntervalSelect) {
+            const s = getSettings();
+            if (s.updateInterval) updateIntervalSelect.value = s.updateInterval;
+            updateIntervalSelect.addEventListener('change', () => {
+                const s = getSettings();
+                s.updateInterval = updateIntervalSelect.value;
+                setSettings(s);
+                showTVNotification('Update interval saved. Reload to apply.');
+            });
+        }
+        const clearFavsBtn = document.getElementById('clear-favs');
+        if (clearFavsBtn) clearFavsBtn.addEventListener('click', () => { setFavs([]); renderGames(); showTVNotification('Favorites cleared'); });
+        const clearRecentBtn = document.getElementById('clear-recent');
+        if (clearRecentBtn) clearRecentBtn.addEventListener('click', () => { setRecent([]); renderRecent(); showTVNotification('Recently played cleared'); });
+
+        // ---------- Help overlay ----------
+        const helpOverlay = document.getElementById('help-overlay');
+        function toggleHelp() {
+            if (helpOverlay) helpOverlay.classList.toggle('hidden');
+        }
+        if (helpOverlay) helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.classList.add('hidden'); });
+
+        // ---------- Gamepad connect/disconnect ----------
+        window.addEventListener('gamepadconnected', (e) => {
+            showTVNotification('Controller connected: ' + (e.gamepad.id || 'Gamepad'));
+        });
+        window.addEventListener('gamepaddisconnected', (e) => {
+            showTVNotification('Controller disconnected');
+        });
+
         // ---------- Init ----------
         window.addEventListener('load', async () => {
             showTVNotification('Cloud Retro Gaming Hub loaded');
             await loadGames();
+            renderRecent();
             requestAnimationFrame(pollGamepad);
+            const interval = parseInt((getSettings().updateInterval) || '60000', 10);
             await checkForUpdates();
-            setInterval(checkForUpdates, 60000);
+            setInterval(checkForUpdates, interval);
             focusZone = 'tabs';
             updateTabFocus();
         });
