@@ -15,11 +15,12 @@
         #net-status { width: 10px; height: 10px; border-radius: 50%; background: #ff4444; transition: background 0.3s; }
         #net-status.online { background: #00ffcc; box-shadow: 0 0 8px #00ffcc; }
         .tab-bar { display: flex; gap: 8px; padding: 10px 40px; background: #0d0d1a; border-bottom: 1px solid #2a2a4a; overflow-x: auto; }
-        .tab { background: linear-gradient(145deg, #1a1a2e, #12122a); color: #aaa; border: 2px solid #2a2a4a; border-radius: 12px; padding: 12px 24px; font-size: 18px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; flex-shrink: 0; position: relative; overflow: hidden; }
-        .tab::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0,255,204,0.1), transparent); opacity: 0; transition: opacity 0.3s; }
+        .tab { background: linear-gradient(145deg, #1a1a2e, #12122a); color: #aaa; border: 2px solid #2a2a4a; border-radius: 12px; padding: 12px 24px; font-size: 18px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; flex-shrink: 0; position: relative; overflow: hidden; }
+        .tab::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0,255,204,0.15), transparent); opacity: 0; transition: opacity 0.4s; }
         .tab:hover::before, .tab.focused::before { opacity: 1; }
-        .tab.active { color: #00ffcc; border-color: #00ffcc; background: linear-gradient(145deg, #12202a, #0a141a); box-shadow: 0 0 20px rgba(0,255,204,0.2); }
-        .tab.focused { transform: scale(1.08); box-shadow: 0 0 25px rgba(0,255,204,0.4); border-color: #00ffcc; }
+        .tab.active { color: #00ffcc; border-color: #00ffcc; background: linear-gradient(145deg, #12202a, #0a141a); box-shadow: 0 0 25px rgba(0,255,204,0.25); }
+        .tab.focused { transform: scale(1.08) translateY(-2px); box-shadow: 0 0 30px rgba(0,255,204,0.4); border-color: #00ffcc; }
+        .tab:active { transform: scale(0.98); }
         main { flex: 1; padding: 20px 40px; overflow: auto; }
         .panel { display: none; animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .panel.active { display: block; }
@@ -366,6 +367,74 @@
             const now = new Date();
             const clockEl = document.getElementById('dash-clock');
             const dateEl = document.getElementById('dash-date');
+        // ---------- Dashboard: clock ----------
+        function updateClock() {
+            const now = new Date();
+            const clockEl = document.getElementById('dash-clock');
+            const dateEl = document.getElementById('dash-date');
+            if (!clockEl || !dateEl) return;
+            try {
+                const opts = { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                clockEl.textContent = now.toLocaleTimeString('el-GR', opts);
+                dateEl.textContent = now.toLocaleDateString('el-GR', { timeZone: 'Europe/Athens', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            } catch (e) {
+                clockEl.textContent = now.toLocaleTimeString();
+                dateEl.textContent = now.toLocaleDateString();
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ---------- Dashboard: storage ----------
+        async function updateStorage() {
+            const el = document.getElementById('dash-storage');
+            const fill = document.getElementById('storage-fill');
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const est = await navigator.storage.estimate();
+                    const usedGB = (est.usage / (1024**3)).toFixed(2);
+                    const quotaGB = (est.quota / (1024**3)).toFixed(2);
+                    const pct = est.quota ? Math.round((est.usage / est.quota) * 100) : 0;
+                    el.textContent = usedGB + ' GB used of ' + quotaGB + ' GB (' + pct + '%)';
+                    fill.style.width = pct + '%';
+                } else {
+                    el.textContent = 'Storage API not available';
+                }
+            } catch (e) { el.textContent = 'Storage check failed'; }
+        }
+        updateStorage();
+        setInterval(updateStorage, 30000);
+
+        // ---------- Dashboard: Rhodes weather ----------
+        const WMO = {
+            0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+            45:'Fog',48:'Depositing rime fog',51:'Light drizzle',53:'Moderate drizzle',55:'Dense drizzle',
+            61:'Slight rain',63:'Moderate rain',65:'Heavy rain',71:'Slight snow',73:'Moderate snow',75:'Heavy snow',
+            80:'Rain showers',81:'Moderate showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm w/ hail',99:'Thunderstorm w/ heavy hail'
+        };
+        async function updateWeather() {
+            const tempEl = document.getElementById('dash-weather');
+            const descEl = document.getElementById('dash-weather-desc');
+            if (!tempEl || !descEl) return;
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 8000);
+            try {
+                const url = 'https://api.open-meteo.com/v1/forecast?latitude=36.4349&longitude=28.2176&current_weather=true';
+                const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+                const data = await res.json();
+                const cw = data.current_weather;
+                tempEl.textContent = (cw.temperature != null ? cw.temperature.toFixed(1) : '--') + '°C';
+                descEl.textContent = (WMO[cw.weathercode] || 'Unknown') + '  •  Wind ' + (cw.windspeed != null ? cw.windspeed.toFixed(0) : '--') + ' km/h';
+            } catch (e) {
+                tempEl.textContent = '--°C';
+                descEl.textContent = 'Weather unavailable';
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+        updateWeather();
+        setInterval(updateWeather, 600000);
+
             if (!clockEl || !dateEl) return;
             try {
                 const opts = { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', second: '2-digit' };
@@ -509,6 +578,29 @@
             }
             inEmulator = true;
             titleEl.textContent = game.title + '  (' + game.platform + ')';
+        // ---------- Games ----------
+        async function loadGames() {
+            try {
+                const res = await fetch('./games/games.json', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length) GAMES = data;
+                }
+            } catch (e) { console.log('No games.json found, using built-in list'); }
+            renderGames();
+        }
+
+        // ---------- Favorites & Recently Played ----------
+        const FAV_KEY = 'crgh_favs';
+        const RECENT_KEY = 'crgh_recent';
+        const SETTINGS_KEY = 'crgh_settings';
+        function getFavs() { try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch (e) { return []; } }
+        function setFavs(v) { try { localStorage.setItem(FAV_KEY, JSON.stringify(v)); } catch (e) {} }
+        function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (e) { return []; } }
+        function setRecent(v) { try { localStorage.setItem(RECENT_KEY, JSON.stringify(v)); } catch (e) {} }
+        function getSettings() { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); } catch (e) { return {}; } }
+        function setSettings(v) { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(v)); } catch (e) {} }
+
             frame.srcdoc = buildSrcdoc(game);
             overlay.classList.remove('hidden');
             statusEl.textContent = 'Playing: ' + game.title;
@@ -516,6 +608,23 @@
             setTimeout(() => { try { frame.focus(); } catch (e) {} }, 1200);
         }
         function closeEmulator() {
+let currentFilter = 'all';
+        let searchQuery = '';
+
+        function isFav(id) { return getFavs().indexOf(id) !== -1; }
+        function toggleFav(id) {
+            const favs = getFavs();
+            const idx = favs.indexOf(id);
+            if (idx === -1) favs.push(id); else favs.splice(idx, 1);
+            setFavs(favs);
+            renderGames();
+        }
+        function addRecent(game) {
+            const recent = getRecent().filter(r => r.id !== game.id);
+            recent.unshift({ id: game.id, title: game.title, platform: game.platform });
+            setRecent(recent.slice(0, 8));
+            renderRecent();
+        }
             inEmulator = false;
             frame.srcdoc = '';
             overlay.classList.add('hidden');
@@ -529,6 +638,41 @@
             const t = document.getElementById('toast');
             t.textContent = message;
             t.classList.remove('hidden');
+function applyGameFilter() {
+            const cards = grid.querySelectorAll('.game-card');
+            cards.forEach((card, i) => {
+                const g = GAMES[i];
+                if (!g) return;
+                let show = true;
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    show = g.title.toLowerCase().indexOf(q) !== -1 || (g.platform || '').toLowerCase().indexOf(q) !== -1 || (g.genre || '').toLowerCase().indexOf(q) !== -1;
+                }
+                if (show && currentFilter === 'fav') show = isFav(g.id);
+                if (show && currentFilter === 'nes') show = g.platform === 'NES';
+                if (show && currentFilter === 'gb') show = g.platform === 'Game Boy';
+                if (show && currentFilter === 'gamepad') show = g.requiresGamepad === true;
+                if (show && currentFilter === 'remote') show = g.requiresGamepad !== true;
+                card.style.display = show ? '' : 'none';
+            });
+        }
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => { searchQuery = e.target.value; applyGameFilter(); });
+        }
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (btn.id === 'filter-all') currentFilter = 'all';
+                else if (btn.id === 'filter-fav') currentFilter = 'fav';
+                else if (btn.id === 'filter-nes') currentFilter = 'nes';
+                else if (btn.id === 'filter-gamepad') currentFilter = 'gamepad';
+                else if (btn.id === 'filter-remote') currentFilter = 'remote';
+                applyGameFilter();
+            });
+        });
             clearTimeout(t._timer);
             t._timer = setTimeout(() => t.classList.add('hidden'), 3000);
         }
@@ -544,6 +688,16 @@
                 } catch (e) { console.warn(e); showToast(message); }
             } else {
                 showToast(message);
+// ---------- Network status ----------
+        function updateNetStatus() {
+            const el = document.getElementById('net-status');
+            if (!el) return;
+            if (navigator.onLine) { el.className = 'net-status online'; el.title = 'Online'; }
+            else { el.className = 'net-status offline'; el.title = 'Offline'; }
+        }
+        window.addEventListener('online', updateNetStatus);
+        window.addEventListener('offline', updateNetStatus);
+        updateNetStatus();
             }
             showToast(message);
         }
@@ -579,6 +733,37 @@
                     case 37: e.preventDefault(); moveFocus(-1); break;
                     case 39: e.preventDefault(); moveFocus(1); break;
                     case 38:
+// ---------- Settings ----------
+        const themeSelect = document.getElementById('theme-select');
+        const updateIntervalSelect = document.getElementById('update-interval');
+        if (themeSelect) {
+            const s = getSettings();
+            if (s.theme) themeSelect.value = s.theme;
+            themeSelect.addEventListener('change', () => {
+                const s = getSettings();
+                s.theme = themeSelect.value;
+                setSettings(s);
+                applyTheme(s.theme);
+            });
+            applyTheme(s.theme || 'dark');
+        }
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.body.style.background = '#f0f0f5';
+                document.body.style.color = '#111';
+            } else {
+                document.body.style.background = '#0a0a14';
+                document.body.style.color = '#fff';
+            }
+        }
+        if (updateIntervalSelect) {
+            const s = getSettings();
+            if (s.updateInterval) updateIntervalSelect.value = s.updateInterval;
+        }
+        const clearFavsBtn = document.getElementById('clear-favs');
+        if (clearFavsBtn) clearFavsBtn.addEventListener('click', () => { setFavs([]); renderGames(); showTVNotification('Favorites cleared'); });
+        const clearRecentBtn = document.getElementById('clear-recent');
+        if (clearRecentBtn) clearRecentBtn.addEventListener('click', () => { setRecent([]); renderRecent(); showTVNotification('Recently played cleared'); });
                         e.preventDefault();
                         if (focused < c) { focusZone = 'tabs'; updateTabFocus(); }
                         else moveFocus(-c);
@@ -592,6 +777,21 @@
                 // dashboard: Up returns to tabs
                 if (e.keyCode === 38) { focusZone = 'tabs'; updateTabFocus(); e.preventDefault(); }
             }
+        });
+// ---------- Help overlay ----------
+        const helpOverlay = document.getElementById('help-overlay');
+        function toggleHelp() {
+            if (helpOverlay) helpOverlay.classList.toggle('hidden');
+        }
+        if (helpOverlay) helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.classList.add('hidden'); });
+        helpOverlay.classList.add('show');
+
+        // ---------- Gamepad connect/disconnect ----------
+        window.addEventListener('gamepadconnected', (e) => {
+            showTVNotification('Controller connected: ' + (e.gamepad.id || 'Gamepad'));
+        });
+        window.addEventListener('gamepaddisconnected', (e) => {
+            showTVNotification('Controller disconnected');
         });
         // ---------- Gamepad ----------
         const gpPrev = {};
@@ -648,6 +848,17 @@
                 if (lastHash !== null && lastHash !== hash) {
                     showTVNotification('Update found! Reloading...');
                     statusEl.textContent = 'Update found! Reloading...';
+// ---------- Init ----------
+        window.addEventListener('load', async () => {
+            showTVNotification('Cloud Retro Gaming Hub loaded');
+            await loadGames();
+            renderRecent();
+            requestAnimationFrame(pollGamepad);
+            await checkForUpdates();
+            setInterval(checkForUpdates, 60000);
+            focusZone = 'tabs';
+            updateTabFocus();
+        });
                     setTimeout(() => window.location.reload(), 3000);
                     return;
                 }
