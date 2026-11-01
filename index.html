@@ -9,67 +9,85 @@
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; height: 100%; background: #0a0a14; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
         body { display: flex; flex-direction: column; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: linear-gradient(90deg, #1a1a2e, #0a0a14); border-bottom: 1px solid #2a2a4a; }
-        h1 { font-size: 30px; margin: 0; color: #00ffcc; text-shadow: 0 0 14px #00ffcc55; }
-        #status { font-size: 16px; color: #aaa; }
-        .tab-bar { display: flex; gap: 12px; padding: 12px 40px; background: #0d0d1a; border-bottom: 1px solid #2a2a4a; }
-        .tab { background: #1a1a2e; color: #aaa; border: 2px solid #2a2a4a; border-radius: 10px; padding: 10px 24px; font-size: 18px; cursor: pointer; transition: all .15s; }
-        .tab.active { color: #00ffcc; border-color: #00ffcc; background: #12202a; }
-        .tab.focused { box-shadow: 0 0 18px #00ffcc66; transform: scale(1.05); }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 40px; background: linear-gradient(90deg, #1a1a2e, #0a0a14); border-bottom: 1px solid #2a2a4a; }
+        h1 { font-size: 28px; margin: 0; color: #00ffcc; text-shadow: 0 0 14px #00ffcc55; }
+        #status { font-size: 15px; color: #aaa; display: flex; align-items: center; gap: 8px; }
+        #net-status { width: 10px; height: 10px; border-radius: 50%; background: #ff4444; transition: background 0.3s; }
+        #net-status.online { background: #00ffcc; box-shadow: 0 0 8px #00ffcc; }
+        .tab-bar { display: flex; gap: 8px; padding: 10px 40px; background: #0d0d1a; border-bottom: 1px solid #2a2a4a; overflow-x: auto; }
+        .tab { background: linear-gradient(145deg, #1a1a2e, #12122a); color: #aaa; border: 2px solid #2a2a4a; border-radius: 12px; padding: 12px 24px; font-size: 18px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; flex-shrink: 0; position: relative; overflow: hidden; }
+        .tab::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0,255,204,0.1), transparent); opacity: 0; transition: opacity 0.3s; }
+        .tab:hover::before, .tab.focused::before { opacity: 1; }
+        .tab.active { color: #00ffcc; border-color: #00ffcc; background: linear-gradient(145deg, #12202a, #0a141a); box-shadow: 0 0 20px rgba(0,255,204,0.2); }
+        .tab.focused { transform: scale(1.08); box-shadow: 0 0 25px rgba(0,255,204,0.4); border-color: #00ffcc; }
         main { flex: 1; padding: 20px 40px; overflow: auto; }
-        .panel { display: none; }
+        .panel { display: none; animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .dash-card { background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 16px; padding: 24px; }
-        .dash-card h3 { margin: 0 0 12px 0; color: #00ffcc; font-size: 22px; }
-        .big { font-size: 40px; font-weight: bold; color: #fff; }
-        .sub { font-size: 16px; color: #888; margin-top: 6px; }
-        .weather-temp { font-size: 48px; font-weight: bold; color: #00ffcc; }
-        .storage-bar { height: 14px; background: #222; border-radius: 7px; overflow: hidden; margin-top: 10px; }
-        .storage-fill { height: 100%; background: linear-gradient(90deg, #00ffcc, #00aa88); }
-        .section-title { font-size: 24px; color: #00ffcc; margin: 0 0 16px 0; }
-        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 24px; }
-        .game-card { position: relative; background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 16px; padding: 16px; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; outline: none; }
-        .game-card.focused { border-color: #00ffcc; box-shadow: 0 0 28px #00ffcc66; transform: scale(1.05); }
-        .game-card.gamepad-required { border-color: #ff6b6b; }
-        .game-card.gamepad-required.focused { border-color: #ff6b6b; box-shadow: 0 0 28px #ff6b6b66; }
-        .cover { height: 150px; border-radius: 10px; background: linear-gradient(135deg, #3a3a6a, #1a1a3a); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: #00ffcc; margin-bottom: 12px; letter-spacing: 2px; }
-        .title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
-        .platform { font-size: 16px; color: #888; }
-        .game-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-        .tag { background: #2a2a4a; color: #aaa; border: 1px solid #3a3a5a; border-radius: 6px; padding: 4px 8px; font-size: 12px; white-space: nowrap; }
-        .tag.gamepad { background: #ff4444; color: #fff; border-color: #ff6b6b; }
-        .tag.remote { background: #00ffcc; color: #000; border-color: #00ffcc; font-weight: bold; }
+        .dash-card { background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 20px; padding: 24px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+        .dash-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #00ffcc; opacity: 0; transition: opacity 0.3s; }
+        .dash-card:hover::before, .dash-card.focused::before { opacity: 1; }
+        .dash-card.focused { transform: translateY(-5px); border-color: #00ffcc; box-shadow: 0 10px 30px rgba(0,255,204,0.15); }
+        .dash-card h3 { margin: 0 0 12px 0; color: #00ffcc; font-size: 21px; text-transform: uppercase; letter-spacing: 1px; }
+        .big { font-size: 42px; font-weight: bold; color: #fff; margin: 8px 0; }
+        .sub { font-size: 15px; color: #888; margin-top: 6px; line-height: 1.5; }
+        .weather-temp { font-size: 52px; font-weight: bold; color: #00ffcc; text-shadow: 0 0 20px rgba(0,255,204,0.3); }
+        .storage-bar { height: 16px; background: #222; border-radius: 8px; overflow: hidden; margin-top: 12px; border: 1px solid #333; }
+        .storage-fill { height: 100%; background: linear-gradient(90deg, #00ffcc, #00aa88); width: 0%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sys-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; font-size: 14px; }
+        .sys-row:last-child { border-bottom: none; }
+        .sys-row .val { color: #00ffcc; font-weight: bold; font-family: 'Courier New', monospace; }
         .overlay { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; }
         .overlay.hidden { display: none; }
-        .emulator-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: #111; border-bottom: 1px solid #333; }
+        .emulator-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px; background: linear-gradient(90deg, #111, #1a1a1a); border-bottom: 1px solid #333; }
         #emulator-title { font-size: 22px; color: #00ffcc; }
-        #close-emulator { background: #333; color: #fff; border: 1px solid #555; padding: 10px 22px; border-radius: 8px; font-size: 18px; cursor: pointer; }
+        #close-emulator { background: #333; color: #fff; border: 1px solid #555; padding: 10px 22px; border-radius: 10px; font-size: 18px; cursor: pointer; transition: all 0.3s; }
+        #close-emulator:hover { background: #ff4444; border-color: #ff4444; box-shadow: 0 0 15px rgba(255,68,68,0.4); }
         #emulator-frame { flex: 1; width: 100%; border: none; background: #000; }
-        .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #00ffcc; color: #000; padding: 16px 32px; border-radius: 12px; font-size: 20px; font-weight: 600; z-index: 200; box-shadow: 0 8px 24px #0008; transition: opacity .3s; }
-        .toast.hidden { display: none; }
-        .search-bar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
-        .search-input { flex: 1; min-width: 200px; background: #1a1a2e; color: #fff; border: 2px solid #2a2a4a; border-radius: 10px; padding: 10px 16px; font-size: 18px; outline: none; }
-        .search-input:focus { border-color: #00ffcc; }
-        .filter-btn { background: #1a1a2e; color: #aaa; border: 2px solid #2a2a4a; border-radius: 10px; padding: 10px 16px; font-size: 16px; cursor: pointer; }
-        .filter-btn.active { color: #00ffcc; border-color: #00ffcc; background: #12202a; }
-        .fav-star { position: absolute; top: 8px; right: 8px; font-size: 24px; cursor: pointer; user-select: none; }
-        .game-card { position: relative; }
-        .net-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-        .net-status.online { background: #00ffcc; }
-        .net-status.offline { background: #ff4444; }
-        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2a2a4a; }
+        .toast { position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%) scale(0.8); background: #00ffcc; color: #000; padding: 18px 36px; border-radius: 14px; font-size: 22px; font-weight: 700; z-index: 200; box-shadow: 0 10px 30px rgba(0,255,204,0.4); opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; }
+        .toast.show { transform: translateX(-50%) scale(1); opacity: 1; }
+        .search-bar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+        .search-input { flex: 1; min-width: 200px; background: #1a1a2e; color: #fff; border: 2px solid #2a2a4a; border-radius: 12px; padding: 12px 18px; font-size: 18px; outline: none; transition: all 0.3s; }
+        .search-input:focus { border-color: #00ffcc; box-shadow: 0 0 15px rgba(0,255,204,0.2); }
+        .filter-btn { background: linear-gradient(145deg, #1a1a2e, #12122a); color: #aaa; border: 2px solid #2a2a4a; border-radius: 12px; padding: 10px 18px; font-size: 16px; cursor: pointer; transition: all 0.3s; white-space: nowrap; }
+        .filter-btn:hover { color: #00ffcc; border-color: #00ffcc; }
+        .filter-btn.active { color: #00ffcc; border-color: #00ffcc; background: linear-gradient(145deg, #12202a, #0a141a); box-shadow: 0 0 15px rgba(0,255,204,0.2); }
+        .fav-star { position: absolute; top: 12px; right: 12px; font-size: 26px; cursor: pointer; user-select: none; transition: transform 0.2s, color 0.2s; }
+        .fav-star:hover { transform: scale(1.3); color: #ffd700; }
+        .fav-star.filled { color: #ffd700; text-shadow: 0 0 10px #ffd700; }
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
+        .game-card { position: relative; background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 20px; padding: 18px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); outline: none; overflow: hidden; }
+        .game-card::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0,255,204,0.05), transparent); transition: left 0.5s; }
+        .game-card:hover::after, .game-card.focused::after { left: 100%; }
+        .game-card.focused { border-color: #00ffcc; box-shadow: 0 0 30px rgba(0,255,204,0.3); transform: scale(1.06); z-index: 10; }
+        .game-card.gamepad-required { border-color: #ff6b6b; }
+        .game-card.gamepad-required.focused { border-color: #ff6b6b; box-shadow: 0 0 30px rgba(255,107,107,0.3); }
+        .cover { height: 150px; border-radius: 14px; background: linear-gradient(135deg, #3a3a6a, #1a1a3a); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: #00ffcc; margin-bottom: 12px; letter-spacing: 2px; transition: transform 0.3s; }
+        .game-card.focused .cover { transform: scale(1.1); }
+        .title { font-size: 20px; font-weight: 700; margin-bottom: 4px; color: #fff; }
+        .platform { font-size: 15px; color: #888; }
+        .game-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+        .tag { background: #2a2a4a; color: #aaa; border: 1px solid #3a3a5a; border-radius: 8px; padding: 5px 10px; font-size: 11px; white-space: nowrap; transition: all 0.3s; }
+        .tag.gamepad { background: #ff4444; color: #fff; border-color: #ff6b6b; box-shadow: 0 0 10px rgba(255,68,68,0.3); }
+        .tag.remote { background: #00ffcc; color: #000; border-color: #00ffcc; font-weight: bold; box-shadow: 0 0 10px rgba(0,255,204,0.3); }
+        .tag:hover { transform: scale(1.1); }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #2a2a4a; }
         .settings-row label { font-size: 18px; }
-        .settings-row select, .settings-row button { background: #1a1a2e; color: #fff; border: 2px solid #2a2a4a; border-radius: 8px; padding: 8px 12px; font-size: 16px; cursor: pointer; }
-        .help-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 150; display: flex; align-items: center; justify-content: center; }
-        .help-overlay.hidden { display: none; }
-        .help-card { background: #1a1a2e; border: 2px solid #00ffcc; border-radius: 16px; padding: 32px; max-width: 600px; width: 90%; }
-        .help-card h2 { color: #00ffcc; margin: 0 0 16px 0; }
-        .help-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2a2a4a; font-size: 16px; }
-        .help-key { color: #00ffcc; font-weight: bold; }
-        .recent-item { background: #1a1a2e; border-radius: 8px; padding: 8px 12px; margin: 4px 0; font-size: 16px; cursor: pointer; }
-        .recent-item:hover { background: #2a2a4a; }
-        .hint { position: fixed; bottom: 16px; right: 24px; font-size: 14px; color: #555; }
+        .settings-row select, .settings-row button { background: #1a1a2e; color: #fff; border: 2px solid #2a2a4a; border-radius: 10px; padding: 10px 14px; font-size: 16px; cursor: pointer; transition: all 0.3s; }
+        .settings-row select:hover, .settings-row button:hover { border-color: #00ffcc; color: #00ffcc; }
+        .help-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2a2a4a; font-size: 17px; }
+        .help-row:last-child { border-bottom: none; }
+        .help-key { color: #00ffcc; font-weight: bold; font-family: 'Courier New', monospace; }
+        .recent-item { background: #1a1a2e; border-radius: 12px; padding: 12px 16px; margin: 6px 0; font-size: 16px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
+        .recent-item:hover { background: #2a2a4a; transform: translateX(5px); border-left-color: #00ffcc; }
+        .hint { position: fixed; bottom: 20px; right: 28px; font-size: 15px; color: #555; background: rgba(0,0,0,0.5); padding: 10px 18px; border-radius: 30px; border: 1px solid #333; backdrop-filter: blur(5px); }
+        .help-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 150; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+        .help-overlay.show { opacity: 1; pointer-events: auto; }
+        .help-card { background: #1a1a2e; border: 2px solid #00ffcc; border-radius: 20px; padding: 36px; max-width: 650px; width: 90%; transform: scale(0.9); transition: transform 0.4s; }
+        .help-overlay.show .help-card { transform: scale(1); }
+        .help-card h2 { color: #00ffcc; margin: 0 0 20px 0; font-size: 28px; }
+        .empty-msg { color: #888; font-size: 17px; padding: 30px; text-align: center; }
     </style>
 </head>
 <body>
@@ -80,6 +98,10 @@
     <div class="tab-bar" id="tab-bar">
         <button class="tab active focused" data-tab="dashboard" id="tab-dashboard">Dashboard</button>
         <button class="tab" data-tab="games" id="tab-games">Gaming Hub</button>
+        <button class="tab" data-tab="media" id="tab-media">Media Player</button>
+        <button class="tab" data-tab="system" id="tab-system">System Info</button>
+        <button class="tab" data-tab="web" id="tab-web">Web Browser</button>
+        <button class="tab" data-tab="apps" id="tab-apps">App Store</button>
         <button class="tab" data-tab="settings" id="tab-settings">Settings</button>
         <button class="tab" data-tab="help" id="tab-help">Help</button>
     </div>
@@ -115,11 +137,108 @@
                 <button id="filter-all" class="filter-btn active">All</button>
                 <button id="filter-fav" class="filter-btn">Favorites</button>
                 <button id="filter-nes" class="filter-btn">NES</button>
-                <button id="filter-gb" class="filter-btn">GB</button>
                 <button id="filter-gamepad" class="filter-btn">Gamepad</button>
                 <button id="filter-remote" class="filter-btn">Remote Only</button>
             </div>
             <div id="game-grid" class="game-grid" tabindex="0"></div>
+        </section>
+        <section id="panel-media" class="panel">
+            <h2 class="section-title">Media Player</h2>
+            <div class="media-grid">
+                <div class="media-card">
+                    <h4>YouTube</h4>
+                    <p>Watch YouTube videos on your TV</p>
+                    <button class="media-btn" data-url="https://www.youtube.com/embed/dQw4w9WgXcQ">Open YouTube</button>
+                </div>
+                <div class="media-card">
+                    <h4>Custom URL</h4>
+                    <p>Play any video or audio URL</p>
+                    <button class="media-btn" data-url="custom">Enter URL</button>
+                </div>
+            </div>
+            <div class="empty-msg" id="media-custom-input" style="display:none;margin-top:16px;">
+                <input id="custom-media-url" class="search-input" type="text" placeholder="https://..." />
+                <button class="media-btn" id="load-custom-media">Load Media</button>
+            </div>
+        </section>
+        <div id="media-player" class="media-player hidden">
+            <div class="media-header">
+                <span id="media-title">Media</span>
+                <button id="close-media">Close</button>
+            </div>
+            <iframe id="media-frame" allowfullscreen allow="autoplay; encrypted-media;"></iframe>
+        </div>
+        <section id="panel-system" class="panel">
+            <h2 class="section-title">System Info</h2>
+            <div class="sys-grid">
+                <div class="sys-card">
+                    <h4>Device</h4>
+                    <div id="sys-platform" class="sub">--</div>
+                    <div id="sys-useragent" class="sub" style="font-size:12px;word-break:break-all;">--</div>
+                </div>
+                <div class="sys-card">
+                    <h4>Storage</h4>
+                    <div id="sys-storage-used" class="sub">Used: -- GB</div>
+                    <div id="sys-storage-quota" class="sub">Quota: -- GB</div>
+                    <div id="sys-storage-pct" class="sub">Usage: --%</div>
+                </div>
+                <div class="sys-card">
+                    <h4>Connection</h4>
+                    <div id="sys-online" class="sub">Online: --</div>
+                    <div id="sys-conn-type" class="sub">Type: --</div>
+                </div>
+                <div class="sys-card">
+                    <h4>Screen</h4>
+                    <div id="sys-screen" class="sub">-- x --</div>
+                    <div id="sys-color" class="sub">Color: -- bit</div>
+                </div>
+            </div>
+        </section>
+        <section id="panel-web" class="panel">
+            <h2 class="section-title">Web Browser</h2>
+            <div class="web-controls">
+                <input id="web-url" type="text" placeholder="https://example.com" />
+                <button id="web-go" class="media-btn">Go</button>
+                <button id="web-home" class="media-btn">Home</button>
+            </div>
+            <div class="web-frame-wrap">
+                <iframe id="web-frame" src="about:blank"></iframe>
+            </div>
+        </section>
+        <section id="panel-apps" class="panel">
+            <h2 class="section-title">App Store</h2>
+            <div class="apps-grid">
+                <div class="app-card">
+                    <h4>YouTube</h4>
+                    <p>Watch videos on YouTube</p>
+                    <button class="app-btn" data-url="https://www.youtube.com" data-name="YouTube">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>Netflix</h4>
+                    <p>Stream movies and shows</p>
+                    <button class="app-btn" data-url="https://www.netflix.com" data-name="Netflix">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>Twitch</h4>
+                    <p>Live streaming platform</p>
+                    <button class="app-btn" data-url="https://www.twitch.tv" data-name="Twitch">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>Spotify</h4>
+                    <p>Music and podcasts</p>
+                    <button class="app-btn" data-url="https://open.spotify.com" data-name="Spotify">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>Google</h4>
+                    <p>Search the web</p>
+                    <button class="app-btn" data-url="https://www.google.com" data-name="Google">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>GitHub</h4>
+                    <p>Code and projects</p>
+                    <button class="app-btn" data-url="https://github.com" data-name="GitHub">Open</button>
+                </div>
+            </div>
         </section>
 
         <section id="panel-settings" class="panel">
@@ -193,18 +312,13 @@
     <div class="hint">Tabs: Left/Right | Enter select | Up to tabs | Down to content</div>
     <script>
         // ---------- State ----------
-        const TABS = ['dashboard', 'games', 'settings', 'help'];
+        const TABS = ['dashboard', 'games', 'media', 'system', 'web', 'apps', 'settings', 'help'];
         let activeTab = 'dashboard';
         let focusZone = 'tabs';
         let tabFocusIndex = 0;
 
         let GAMES = [
-            { id: 'smb',   title: 'Super Mario Bros.',     platform: 'NES',       core: 'nes',     rom: './games/super-mario-bros.nes' },
-            { id: 'zelda', title: 'The Legend of Zelda',   platform: 'NES',       core: 'nes',     rom: './games/legend-of-zelda.nes' },
-            { id: 'tetris',title: 'Tetris',                platform: 'Game Boy',  core: 'gb',      rom: './games/tetris.gb' },
-            { id: 'pkred', title: 'Pokemon Red',           platform: 'Game Boy',  core: 'gb',      rom: './games/pokemon-red.gb' },
-            { id: 'sonic', title: 'Sonic the Hedgehog',    platform: 'Genesis',   core: 'genesis', rom: './games/sonic.md' },
-            { id: 'smk',   title: 'Super Mario Kart',      platform: 'SNES',      core: 'snes',    rom: './games/super-mario-kart.smc' }
+            { id: 'micro-mages', title: 'Micro Mages', platform: 'NES', core: 'nes', rom: './games/micro-mages.nes', genre: 'Platformer', tags: ['Co-op', 'Homebrew'], requiresGamepad: false, homebrew: true }
         ];
 
         const grid = document.getElementById('game-grid');
@@ -229,7 +343,7 @@
             tabFocusIndex = TABS.indexOf(name);
             document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
             document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
-            statusEl.textContent = name === 'dashboard' ? 'Dashboard' : 'Gaming Hub';
+            statusEl.textContent = name.charAt(0).toUpperCase() + name.slice(1);
             updateTabFocus();
         }
         document.querySelectorAll('.tab').forEach((t) => {
