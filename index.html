@@ -9,10 +9,24 @@
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; height: 100%; background: #0a0a14; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
         body { display: flex; flex-direction: column; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background: linear-gradient(90deg, #1a1a2e, #0a0a14); border-bottom: 1px solid #2a2a4a; }
-        h1 { font-size: 34px; margin: 0; color: #00ffcc; text-shadow: 0 0 14px #00ffcc55; }
-        #status { font-size: 18px; color: #aaa; }
-        main { flex: 1; padding: 24px 40px; overflow: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: linear-gradient(90deg, #1a1a2e, #0a0a14); border-bottom: 1px solid #2a2a4a; }
+        h1 { font-size: 30px; margin: 0; color: #00ffcc; text-shadow: 0 0 14px #00ffcc55; }
+        #status { font-size: 16px; color: #aaa; }
+        .tab-bar { display: flex; gap: 12px; padding: 12px 40px; background: #0d0d1a; border-bottom: 1px solid #2a2a4a; }
+        .tab { background: #1a1a2e; color: #aaa; border: 2px solid #2a2a4a; border-radius: 10px; padding: 10px 24px; font-size: 18px; cursor: pointer; transition: all .15s; }
+        .tab.active { color: #00ffcc; border-color: #00ffcc; background: #12202a; }
+        .tab.focused { box-shadow: 0 0 18px #00ffcc66; transform: scale(1.05); }
+        main { flex: 1; padding: 20px 40px; overflow: auto; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .dash-card { background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 16px; padding: 24px; }
+        .dash-card h3 { margin: 0 0 12px 0; color: #00ffcc; font-size: 22px; }
+        .big { font-size: 40px; font-weight: bold; color: #fff; }
+        .sub { font-size: 16px; color: #888; margin-top: 6px; }
+        .weather-temp { font-size: 48px; font-weight: bold; color: #00ffcc; }
+        .storage-bar { height: 14px; background: #222; border-radius: 7px; overflow: hidden; margin-top: 10px; }
+        .storage-fill { height: 100%; background: linear-gradient(90deg, #00ffcc, #00aa88); }
         .section-title { font-size: 24px; color: #00ffcc; margin: 0 0 16px 0; }
         .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 24px; }
         .game-card { background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 16px; padding: 16px; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; outline: none; }
@@ -36,9 +50,35 @@
         <h1>Cloud Retro Gaming Hub</h1>
         <div id="status">Ready</div>
     </header>
+    <div class="tab-bar" id="tab-bar">
+        <button class="tab active focused" data-tab="dashboard" id="tab-dashboard">Dashboard</button>
+        <button class="tab" data-tab="games" id="tab-games">Gaming Hub</button>
+    </div>
     <main>
-        <h2 class="section-title">Game Library</h2>
-        <div id="game-grid" class="game-grid" tabindex="0"></div>
+        <section id="panel-dashboard" class="panel active">
+            <h2 class="section-title">Dashboard</h2>
+            <div class="dash-grid">
+                <div class="dash-card">
+                    <h3>Time (Rhodes)</h3>
+                    <div id="dash-clock" class="big">--:--:--</div>
+                    <div id="dash-date" class="sub">--</div>
+                </div>
+                <div class="dash-card">
+                    <h3>Storage</h3>
+                    <div id="dash-storage" class="sub">Checking...</div>
+                    <div class="storage-bar"><div id="storage-fill" class="storage-fill" style="width:0%"></div></div>
+                </div>
+                <div class="dash-card">
+                    <h3>Rhodes Weather</h3>
+                    <div id="dash-weather" class="weather-temp">--°C</div>
+                    <div id="dash-weather-desc" class="sub">Loading...</div>
+                </div>
+            </div>
+        </section>
+        <section id="panel-games" class="panel">
+            <h2 class="section-title">Game Library</h2>
+            <div id="game-grid" class="game-grid" tabindex="0"></div>
+        </section>
     </main>
     <div id="emulator-overlay" class="overlay hidden">
         <div class="emulator-header">
@@ -48,8 +88,14 @@
         <iframe id="emulator-frame" allowfullscreen allow="autoplay; gamepad"></iframe>
     </div>
     <div id="toast" class="toast hidden"></div>
-    <div class="hint">D-Pad / Arrow keys to navigate &bull; Enter to play &bull; Back/Esc to exit</div>
+    <div class="hint">Tabs: Left/Right | Enter select | Up to tabs | Down to content</div>
     <script>
+        // ---------- State ----------
+        const TABS = ['dashboard', 'games'];
+        let activeTab = 'dashboard';
+        let focusZone = 'tabs';
+        let tabFocusIndex = 0;
+
         let GAMES = [
             { id: 'smb',   title: 'Super Mario Bros.',     platform: 'NES',       core: 'nes',     rom: './games/super-mario-bros.nes' },
             { id: 'zelda', title: 'The Legend of Zelda',   platform: 'NES',       core: 'nes',     rom: './games/legend-of-zelda.nes' },
@@ -58,14 +104,102 @@
             { id: 'sonic', title: 'Sonic the Hedgehog',    platform: 'Genesis',   core: 'genesis', rom: './games/sonic.md' },
             { id: 'smk',   title: 'Super Mario Kart',      platform: 'SNES',      core: 'snes',    rom: './games/super-mario-kart.smc' }
         ];
+
         const grid = document.getElementById('game-grid');
         const statusEl = document.getElementById('status');
         const overlay = document.getElementById('emulator-overlay');
         const frame = document.getElementById('emulator-frame');
         const titleEl = document.getElementById('emulator-title');
+
         let focused = 0;
         let inEmulator = false;
+
         function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        // ---------- Tabs ----------
+        function updateTabFocus() {
+            document.querySelectorAll('.tab').forEach((t, i) => {
+                t.classList.toggle('focused', i === tabFocusIndex);
+            });
+        }
+        function setActiveTab(name) {
+            activeTab = name;
+            tabFocusIndex = TABS.indexOf(name);
+            document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+            document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+            statusEl.textContent = name === 'dashboard' ? 'Dashboard' : 'Gaming Hub';
+            updateTabFocus();
+        }
+        document.querySelectorAll('.tab').forEach((t) => {
+            t.addEventListener('click', () => { setActiveTab(t.dataset.tab); focusZone = 'content'; focusContent(); });
+        });
+
+        function focusContent() {
+            if (activeTab === 'games') {
+                const cards = grid.querySelectorAll('.game-card');
+                if (cards.length && focused >= cards.length) focused = 0;
+                if (cards.length) {
+                    cards.forEach((c, k) => c.classList.toggle('focused', k === focused));
+                    try { cards[focused].scrollIntoView({ block: 'nearest' }); } catch (e) {}
+                }
+            }
+        }
+
+        // ---------- Dashboard: clock ----------
+        function updateClock() {
+            const now = new Date();
+            const opts = { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            document.getElementById('dash-clock').textContent = now.toLocaleTimeString('el-GR', opts);
+            document.getElementById('dash-date').textContent = now.toLocaleDateString('el-GR', { timeZone: 'Europe/Athens', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ---------- Dashboard: storage ----------
+        async function updateStorage() {
+            const el = document.getElementById('dash-storage');
+            const fill = document.getElementById('storage-fill');
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const est = await navigator.storage.estimate();
+                    const usedGB = (est.usage / (1024**3)).toFixed(2);
+                    const quotaGB = (est.quota / (1024**3)).toFixed(2);
+                    const pct = est.quota ? Math.round((est.usage / est.quota) * 100) : 0;
+                    el.textContent = usedGB + ' GB used of ' + quotaGB + ' GB (' + pct + '%)';
+                    fill.style.width = pct + '%';
+                } else {
+                    el.textContent = 'Storage API not available';
+                }
+            } catch (e) { el.textContent = 'Storage check failed'; }
+        }
+        updateStorage();
+        setInterval(updateStorage, 30000);
+        // ---------- Dashboard: Rhodes weather ----------
+        const WMO = {
+            0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+            45:'Fog',48:'Depositing rime fog',51:'Light drizzle',53:'Moderate drizzle',55:'Dense drizzle',
+            61:'Slight rain',63:'Moderate rain',65:'Heavy rain',71:'Slight snow',73:'Moderate snow',75:'Heavy snow',
+            80:'Rain showers',81:'Moderate showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm w/ hail',99:'Thunderstorm w/ heavy hail'
+        };
+        async function updateWeather() {
+            const tempEl = document.getElementById('dash-weather');
+            const descEl = document.getElementById('dash-weather-desc');
+            try {
+                const url = 'https://api.open-meteo.com/v1/forecast?latitude=36.4349&longitude=28.2176&current_weather=true';
+                const res = await fetch(url, { cache: 'no-store' });
+                const data = await res.json();
+                const cw = data.current_weather;
+                tempEl.textContent = (cw.temperature != null ? cw.temperature.toFixed(1) : '--') + '°C';
+                descEl.textContent = (WMO[cw.weathercode] || 'Unknown') + '  •  Wind ' + (cw.windspeed != null ? cw.windspeed.toFixed(0) : '--') + ' km/h';
+            } catch (e) {
+                tempEl.textContent = '--°C';
+                descEl.textContent = 'Weather unavailable';
+            }
+        }
+        updateWeather();
+        setInterval(updateWeather, 600000);
+
+        // ---------- Games ----------
         async function loadGames() {
             try {
                 const res = await fetch('./games/games.json', { cache: 'no-store' });
@@ -118,6 +252,7 @@
             if (next >= cards.length) next = cards.length - 1;
             setFocus(next);
         }
+        // ---------- Emulator ----------
         function buildSrcdoc(game) {
             const core = JSON.stringify(game.core || 'nes');
             const rom = JSON.stringify(game.rom || '');
@@ -148,6 +283,8 @@
             showTVNotification('Returned to menu');
         }
         document.getElementById('close-emulator').addEventListener('click', closeEmulator);
+
+        // ---------- Toast ----------
         function showToast(message) {
             const t = document.getElementById('toast');
             t.textContent = message;
@@ -170,7 +307,10 @@
             }
             showToast(message);
         }
+
+        // ---------- Keyboard ----------
         function isBackKey(k) { return k === 8 || k === 27 || k === 461 || k === 10009 || k === 4097; }
+
         window.addEventListener('keydown', (e) => {
             if (inEmulator) {
                 if (isBackKey(e.keyCode)) {
@@ -179,18 +319,35 @@
                 }
                 return;
             }
-            const c = cols();
-            switch (e.keyCode) {
-                case 37: e.preventDefault(); moveFocus(-1); break;
-                case 39: e.preventDefault(); moveFocus(1); break;
-                case 38: e.preventDefault(); moveFocus(-c); break;
-                case 40: e.preventDefault(); moveFocus(c); break;
-                case 13: e.preventDefault(); launchGame(focused); break;
-                default:
-                    if (isBackKey(e.keyCode)) e.preventDefault();
+            if (focusZone === 'tabs') {
+                if (e.keyCode === 37) { tabFocusIndex = (tabFocusIndex - 1 + TABS.length) % TABS.length; updateTabFocus(); e.preventDefault(); }
+                else if (e.keyCode === 39) { tabFocusIndex = (tabFocusIndex + 1) % TABS.length; updateTabFocus(); e.preventDefault(); }
+                else if (e.keyCode === 13) { setActiveTab(TABS[tabFocusIndex]); focusZone = 'content'; focusContent(); e.preventDefault(); }
+                else if (e.keyCode === 40) { focusZone = 'content'; focusContent(); e.preventDefault(); }
+                return;
+            }
+            // content zone
+            if (activeTab === 'games') {
+                const c = cols();
+                switch (e.keyCode) {
+                    case 37: e.preventDefault(); moveFocus(-1); break;
+                    case 39: e.preventDefault(); moveFocus(1); break;
+                    case 38:
+                        e.preventDefault();
+                        if (focused < c) { focusZone = 'tabs'; updateTabFocus(); }
+                        else moveFocus(-c);
+                        break;
+                    case 40: e.preventDefault(); moveFocus(c); break;
+                    case 13: e.preventDefault(); launchGame(focused); break;
+                    default:
+                        if (isBackKey(e.keyCode)) e.preventDefault();
+                }
+            } else {
+                // dashboard: Up returns to tabs
+                if (e.keyCode === 38) { focusZone = 'tabs'; updateTabFocus(); e.preventDefault(); }
             }
         });
-        // ---------- Gamepad API polling ----------
+        // ---------- Gamepad ----------
         const gpPrev = {};
         let gpCooldown = 0;
         function pollGamepad() {
@@ -211,18 +368,30 @@
                 const bBtn  = btn(1);
                 const key = 'gp' + gp.index;
                 const prev = gpPrev[key] || {};
-                const c = cols();
-                if (left  && !prev.left)  { moveFocus(-1);     gpCooldown = now + 180; }
-                else if (right && !prev.right) { moveFocus(1);  gpCooldown = now + 180; }
-                else if (up    && !prev.up)    { moveFocus(-c); gpCooldown = now + 180; }
-                else if (down  && !prev.down)  { moveFocus(c);  gpCooldown = now + 180; }
-                if (aBtn && !prev.a) { launchGame(focused); gpCooldown = now + 300; }
-                if (bBtn && !prev.b) { /* reserved for back */ }
+                if (focusZone === 'tabs') {
+                    if (left && !prev.left)   { tabFocusIndex = (tabFocusIndex - 1 + TABS.length) % TABS.length; updateTabFocus(); gpCooldown = now + 220; }
+                    else if (right && !prev.right) { tabFocusIndex = (tabFocusIndex + 1) % TABS.length; updateTabFocus(); gpCooldown = now + 220; }
+                    if (aBtn && !prev.a) { setActiveTab(TABS[tabFocusIndex]); focusZone = 'content'; focusContent(); gpCooldown = now + 300; }
+                    if (down && !prev.down) { focusZone = 'content'; focusContent(); gpCooldown = now + 220; }
+                } else if (activeTab === 'games') {
+                    const c = cols();
+                    if (left  && !prev.left)  { moveFocus(-1);     gpCooldown = now + 180; }
+                    else if (right && !prev.right) { moveFocus(1);  gpCooldown = now + 180; }
+                    else if (up    && !prev.up) {
+                        if (focused < c) { focusZone = 'tabs'; updateTabFocus(); }
+                        else moveFocus(-c);
+                        gpCooldown = now + 180;
+                    }
+                    else if (down  && !prev.down)  { moveFocus(c);  gpCooldown = now + 180; }
+                    if (aBtn && !prev.a) { launchGame(focused); gpCooldown = now + 300; }
+                } else {
+                    if (up && !prev.up) { focusZone = 'tabs'; updateTabFocus(); gpCooldown = now + 220; }
+                }
                 gpPrev[key] = { left, right, up, down, a: aBtn, b: bBtn };
             }
         }
 
-        // ---------- Auto-update checker (every 1 minute) ----------
+        // ---------- Update checker ----------
         let lastHash = null;
         async function checkForUpdates() {
             try {
@@ -237,6 +406,9 @@
                     return;
                 }
                 lastHash = hash;
+                if (focusZone === 'tabs' || activeTab === 'dashboard') {
+                    // keep status informative
+                }
                 statusEl.textContent = 'Ready  •  Last checked ' + new Date().toLocaleTimeString();
             } catch (err) {
                 console.error('Update check failed', err);
@@ -250,8 +422,9 @@
             requestAnimationFrame(pollGamepad);
             await checkForUpdates();
             setInterval(checkForUpdates, 60000);
+            focusZone = 'tabs';
+            updateTabFocus();
         });
     </script>
 </body>
 </html>
-

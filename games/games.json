@@ -1,0 +1,23 @@
+[
+  {
+    "id": "smb",
+    "title": "Super Mario Bros. (example)",
+    "platform": "NES",
+    "core": "nes",
+    "rom": "./games/super-mario-bros.nes"
+  },
+  {
+    "id": "tetris",
+    "title": "Tetris (example)",
+    "platform": "Game Boy",
+    "core": "gb",
+    "rom": "./games/tetris.gb"
+  },
+  {
+    "id": "sonic",
+    "title": "Sonic the Hedgehog (example)",
+    "platform": "Genesis",
+    "core": "genesis",
+    "rom": "./games/sonic.md"
+  }
+]
