@@ -1,5 +1,5 @@
 [
-  { "id": "doom", "title": "Doom", "platform": "NES", "core": "nes", "rom": "./games/doom.gba", "genre": "FPS", "tags": ["Classic", "Homebrew"], "requiresGamepad": false, "homebrew": true },
+  { "id": "doom", "title": "Doom", "platform": "gba", "core": "nes", "rom": "./games/doom.gba", "genre": "FPS", "tags": ["Classic", "Homebrew"], "requiresGamepad": false, "homebrew": true },
   { "id": "platformer-game", "title": "platformergame", "platform": "NES", "core": "nes", "rom": "./games/platformergame.gbc", "genre": "Platformer", "tags": ["Hard", "Homebrew"], "requiresGamepad": false, "homebrew": true },
   { "id": "shooter", "title": "Shooter", "platform": "NES", "core": "nes", "rom": "./games/shooter.gb", "genre": "shooter", "tags": ["Comedy", "Homebrew"], "requiresGamepad": false, "homebrew": true }
 ]
