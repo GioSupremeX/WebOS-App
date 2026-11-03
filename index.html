@@ -1007,9 +1007,9 @@ function applyGameFilter() {
         // ---------- Help overlay ----------
         const helpOverlay = document.getElementById('help-overlay');
         function toggleHelp() {
-            if (helpOverlay) helpOverlay.classList.toggle('hidden');
+            if (helpOverlay) helpOverlay.classList.toggle('show');
         }
-        if (helpOverlay) helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.classList.add('hidden'); });
+        if (helpOverlay) helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.classList.remove('show'); });
 
         // ---------- Gamepad connect/disconnect ----------
         window.addEventListener('gamepadconnected', (e) => {
