@@ -301,7 +301,7 @@
         </div>
         <iframe id="emulator-frame" allowfullscreen allow="autoplay; gamepad"></iframe>
     </div>
-    <div id="help-overlay" class="help-overlay hidden">
+    <div id="help-overlay" class="help-overlay">
         <div class="help-card">
             <h2>Quick Help</h2>
             <div class="help-row"><span class="help-key">?</span><span>Toggle this help</span></div>
@@ -594,17 +594,6 @@
             }
             inEmulator = true;
             titleEl.textContent = game.title + '  (' + game.platform + ')';
-        // ---------- Games ----------
-        async function loadGames() {
-            try {
-                const res = await fetch('./games/games.json', { cache: 'no-store' });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (Array.isArray(data) && data.length) GAMES = data;
-                }
-            } catch (e) { console.log('No games.json found, using built-in list'); }
-            renderGames();
-        }
 
         // ---------- Favorites & Recently Played ----------
         const FAV_KEY = 'crgh_favs';
@@ -748,36 +737,7 @@ function applyGameFilter() {
                 switch (e.keyCode) {
                     case 37: e.preventDefault(); moveFocus(-1); break;
                     case 39: e.preventDefault(); moveFocus(1); break;
-                    case 38:
-        const updateIntervalSelect = document.getElementById('update-interval');
-        if (themeSelect) {
-            const s = getSettings();
-            if (s.theme) themeSelect.value = s.theme;
-            themeSelect.addEventListener('change', () => {
-                const s = getSettings();
-                s.theme = themeSelect.value;
-                setSettings(s);
-                applyTheme(s.theme);
-            });
-            applyTheme(s.theme || 'dark');
-        }
-        function applyTheme(theme) {
-            if (theme === 'light') {
-                document.body.style.background = '#f0f0f5';
-                document.body.style.color = '#111';
-            } else {
-                document.body.style.background = '#0a0a14';
-                document.body.style.color = '#fff';
-            }
-        }
-        if (updateIntervalSelect) {
-            const s = getSettings();
-            if (s.updateInterval) updateIntervalSelect.value = s.updateInterval;
-        }
-        const clearFavsBtn = document.getElementById('clear-favs');
-        if (clearFavsBtn) clearFavsBtn.addEventListener('click', () => { setFavs([]); renderGames(); showTVNotification('Favorites cleared'); });
-        const clearRecentBtn = document.getElementById('clear-recent');
-        if (clearRecentBtn) clearRecentBtn.addEventListener('click', () => { setRecent([]); renderRecent(); showTVNotification('Recently played cleared'); });
+                    case 38: e.preventDefault(); focusZone = 'tabs'; updateTabFocus(); break;
                         e.preventDefault();
                         if (focused < c) { focusZone = 'tabs'; updateTabFocus(); }
                         else moveFocus(-c);
@@ -797,8 +757,7 @@ function applyGameFilter() {
         function toggleHelp() {
             if (helpOverlay) helpOverlay.classList.toggle('hidden');
         }
-        if (helpOverlay) helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.classList.add('hidden'); });
-        helpOverlay.classList.add('show');
+        if (helpOverlay) helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.classList.remove('show'); });
 
         // ---------- Gamepad connect/disconnect ----------
         window.addEventListener('gamepadconnected', (e) => {
