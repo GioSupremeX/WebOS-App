@@ -3,37 +3,853 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Doom - GBA</title>
+    <title>Cloud Retro Gaming Hub</title>
     <style>
-        html, body, #game {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-        }
-
-        html, body {
-            overflow: hidden;
-            background: #000;
-        }
-
-        #game {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; height: 100%; background: #0a0a14; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+        body { display: flex; flex-direction: column; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 40px; background: linear-gradient(90deg, #1a1a2e, #0a0a14); border-bottom: 1px solid #2a2a4a; }
+        h1 { font-size: 28px; margin: 0; color: #00ffcc; text-shadow: 0 0 14px #00ffcc55; }
+        #status { font-size: 15px; color: #aaa; display: flex; align-items: center; gap: 8px; }
+        #net-status { width: 10px; height: 10px; border-radius: 50%; background: #ff4444; transition: background 0.3s; }
+        #net-status.online { background: #00ffcc; box-shadow: 0 0 8px #00ffcc; }
+        .tab-bar { display: flex; gap: 8px; padding: 10px 40px; background: #0d0d1a; border-bottom: 1px solid #2a2a4a; overflow-x: auto; }
+        .tab { background: linear-gradient(145deg, #1a1a2e, #12122a); color: #aaa; border: 2px solid #2a2a4a; border-radius: 12px; padding: 12px 24px; font-size: 18px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; flex-shrink: 0; position: relative; overflow: hidden; }
+        .tab::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0,255,204,0.15), transparent); opacity: 0; transition: opacity 0.4s; }
+        .tab:hover::before, .tab.focused::before { opacity: 1; }
+        .tab.active { color: #00ffcc; border-color: #00ffcc; background: linear-gradient(145deg, #12202a, #0a141a); box-shadow: 0 0 25px rgba(0,255,204,0.25); }
+        .tab.focused { transform: scale(1.08) translateY(-2px); box-shadow: 0 0 30px rgba(0,255,204,0.4); border-color: #00ffcc; }
+        .tab:active { transform: scale(0.98); }
+        main { flex: 1; padding: 20px 40px; overflow: auto; }
+        .panel { display: none; animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .dash-card { background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 20px; padding: 24px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+        .dash-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #00ffcc; opacity: 0; transition: opacity 0.3s; }
+        .dash-card:hover::before, .dash-card.focused::before { opacity: 1; }
+        .dash-card.focused { transform: translateY(-5px); border-color: #00ffcc; box-shadow: 0 10px 30px rgba(0,255,204,0.15); }
+        .dash-card h3 { margin: 0 0 12px 0; color: #00ffcc; font-size: 21px; text-transform: uppercase; letter-spacing: 1px; }
+        .big { font-size: 42px; font-weight: bold; color: #fff; margin: 8px 0; }
+        .sub { font-size: 15px; color: #888; margin-top: 6px; line-height: 1.5; }
+        .weather-temp { font-size: 52px; font-weight: bold; color: #00ffcc; text-shadow: 0 0 20px rgba(0,255,204,0.3); }
+        .storage-bar { height: 16px; background: #222; border-radius: 8px; overflow: hidden; margin-top: 12px; border: 1px solid #333; }
+        .storage-fill { height: 100%; background: linear-gradient(90deg, #00ffcc, #00aa88); width: 0%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sys-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; font-size: 14px; }
+        .sys-row:last-child { border-bottom: none; }
+        .sys-row .val { color: #00ffcc; font-weight: bold; font-family: 'Courier New', monospace; }
+        .overlay { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; }
+        .overlay.hidden { display: none; }
+        .emulator-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px; background: linear-gradient(90deg, #111, #1a1a1a); border-bottom: 1px solid #333; }
+        #emulator-title { font-size: 22px; color: #00ffcc; }
+        #close-emulator { background: #333; color: #fff; border: 1px solid #555; padding: 10px 22px; border-radius: 10px; font-size: 18px; cursor: pointer; transition: all 0.3s; }
+        #close-emulator:hover { background: #ff4444; border-color: #ff4444; box-shadow: 0 0 15px rgba(255,68,68,0.4); }
+        #emulator-frame { flex: 1; width: 100%; border: none; background: #000; }
+        .toast { position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%) scale(0.8); background: #00ffcc; color: #000; padding: 18px 36px; border-radius: 14px; font-size: 22px; font-weight: 700; z-index: 200; box-shadow: 0 10px 30px rgba(0,255,204,0.4); opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; }
+        .toast.show { transform: translateX(-50%) scale(1); opacity: 1; }
+        .search-bar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+        .search-input { flex: 1; min-width: 200px; background: #1a1a2e; color: #fff; border: 2px solid #2a2a4a; border-radius: 12px; padding: 12px 18px; font-size: 18px; outline: none; transition: all 0.3s; }
+        .search-input:focus { border-color: #00ffcc; box-shadow: 0 0 15px rgba(0,255,204,0.2); }
+        .filter-btn { background: linear-gradient(145deg, #1a1a2e, #12122a); color: #aaa; border: 2px solid #2a2a4a; border-radius: 12px; padding: 10px 18px; font-size: 16px; cursor: pointer; transition: all 0.3s; white-space: nowrap; }
+        .filter-btn:hover { color: #00ffcc; border-color: #00ffcc; }
+        .filter-btn.active { color: #00ffcc; border-color: #00ffcc; background: linear-gradient(145deg, #12202a, #0a141a); box-shadow: 0 0 15px rgba(0,255,204,0.2); }
+        .fav-star { position: absolute; top: 12px; right: 12px; font-size: 26px; cursor: pointer; user-select: none; transition: transform 0.2s, color 0.2s; }
+        .fav-star:hover { transform: scale(1.3); color: #ffd700; }
+        .fav-star.filled { color: #ffd700; text-shadow: 0 0 10px #ffd700; }
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
+        .game-card { position: relative; background: linear-gradient(145deg, #1e1e3a, #12122a); border: 2px solid #2a2a4a; border-radius: 20px; padding: 18px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); outline: none; overflow: hidden; }
+        .game-card::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0,255,204,0.05), transparent); transition: left 0.5s; }
+        .game-card:hover::after, .game-card.focused::after { left: 100%; }
+        .game-card.focused { border-color: #00ffcc; box-shadow: 0 0 30px rgba(0,255,204,0.3); transform: scale(1.06); z-index: 10; }
+        .game-card.gamepad-required { border-color: #ff6b6b; }
+        .game-card.gamepad-required.focused { border-color: #ff6b6b; box-shadow: 0 0 30px rgba(255,107,107,0.3); }
+        .cover { height: 150px; border-radius: 14px; background: linear-gradient(135deg, #3a3a6a, #1a1a3a); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: #00ffcc; margin-bottom: 12px; letter-spacing: 2px; transition: transform 0.3s; }
+        .game-card.focused .cover { transform: scale(1.1); }
+        .title { font-size: 20px; font-weight: 700; margin-bottom: 4px; color: #fff; }
+        .platform { font-size: 15px; color: #888; }
+        .game-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+        .tag { background: #2a2a4a; color: #aaa; border: 1px solid #3a3a5a; border-radius: 8px; padding: 5px 10px; font-size: 11px; white-space: nowrap; transition: all 0.3s; }
+        .tag.gamepad { background: #ff4444; color: #fff; border-color: #ff6b6b; box-shadow: 0 0 10px rgba(255,68,68,0.3); }
+        .tag.remote { background: #00ffcc; color: #000; border-color: #00ffcc; font-weight: bold; box-shadow: 0 0 10px rgba(0,255,204,0.3); }
+        .tag:hover { transform: scale(1.1); }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #2a2a4a; }
+        .settings-row label { font-size: 18px; }
+        .settings-row select, .settings-row button { background: #1a1a2e; color: #fff; border: 2px solid #2a2a4a; border-radius: 10px; padding: 10px 14px; font-size: 16px; cursor: pointer; transition: all 0.3s; }
+        .settings-row select:hover, .settings-row button:hover { border-color: #00ffcc; color: #00ffcc; }
+        .help-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2a2a4a; font-size: 17px; }
+        .help-row:last-child { border-bottom: none; }
+        .help-key { color: #00ffcc; font-weight: bold; font-family: 'Courier New', monospace; }
+        .recent-item { background: #1a1a2e; border-radius: 12px; padding: 12px 16px; margin: 6px 0; font-size: 16px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
+        .recent-item:hover { background: #2a2a4a; transform: translateX(5px); border-left-color: #00ffcc; }
+        .hint { position: fixed; bottom: 20px; right: 28px; font-size: 15px; color: #555; background: rgba(0,0,0,0.5); padding: 10px 18px; border-radius: 30px; border: 1px solid #333; backdrop-filter: blur(5px); }
+        .help-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 150; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+        .help-overlay.show { opacity: 1; pointer-events: auto; }
+        .help-card { background: #1a1a2e; border: 2px solid #00ffcc; border-radius: 20px; padding: 36px; max-width: 650px; width: 90%; transform: scale(0.9); transition: transform 0.4s; }
+        .help-overlay.show .help-card { transform: scale(1); }
+        .help-card h2 { color: #00ffcc; margin: 0 0 20px 0; font-size: 28px; }
+        .empty-msg { color: #888; font-size: 17px; padding: 30px; text-align: center; }
     </style>
 </head>
 <body>
-    <div id="game"></div>
+    <header>
+        <h1>Cloud Retro Gaming Hub</h1>
+        <div id="status">Ready <span id="net-status" class="net-status"></span></div>
+    </header>
+    <div class="tab-bar" id="tab-bar">
+        <button class="tab active focused" data-tab="dashboard" id="tab-dashboard">Dashboard</button>
+        <button class="tab" data-tab="games" id="tab-games">Gaming Hub</button>
+        <button class="tab" data-tab="media" id="tab-media">Media Player</button>
+        <button class="tab" data-tab="system" id="tab-system">System Info</button>
+        <button class="tab" data-tab="web" id="tab-web">Web Browser</button>
+        <button class="tab" data-tab="apps" id="tab-apps">App Store</button>
+        <button class="tab" data-tab="settings" id="tab-settings">Settings</button>
+        <button class="tab" data-tab="help" id="tab-help">Help</button>
+    </div>
+    <main>
+        <section id="panel-dashboard" class="panel active">
+            <h2 class="section-title">Dashboard</h2>
+            <div class="dash-grid">
+                <div class="dash-card">
+                    <h3>Time (Rhodes)</h3>
+                    <div id="dash-clock" class="big">--:--:--</div>
+                    <div id="dash-date" class="sub">--</div>
+                </div>
+                <div class="dash-card">
+                    <h3>Storage</h3>
+                    <div id="dash-storage" class="sub">Checking...</div>
+                    <div class="storage-bar"><div id="storage-fill" class="storage-fill" style="width:0%"></div></div>
+                </div>
+                <div class="dash-card">
+                    <h3>Recently Played</h3>
+                    <div id="recent-list">None yet</div>
+                </div>
+                <div class="dash-card">
+                    <h3>Rhodes Weather</h3>
+                    <div id="dash-weather" class="weather-temp">--°C</div>
+                    <div id="dash-weather-desc" class="sub">Loading...</div>
+                </div>
+            </div>
+        </section>
+        <section id="panel-games" class="panel">
+            <h2 class="section-title">Game Library</h2>
+            <div class="search-bar">
+                <input id="search-input" class="search-input" type="text" placeholder="Search games..." />
+                <button id="filter-all" class="filter-btn active">All</button>
+                <button id="filter-fav" class="filter-btn">Favorites</button>
+                <button id="filter-nes" class="filter-btn">NES</button>
+                <button id="filter-gamepad" class="filter-btn">Gamepad</button>
+                <button id="filter-remote" class="filter-btn">Remote Only</button>
+            </div>
+            <div id="game-grid" class="game-grid" tabindex="0"></div>
+        </section>
+        <section id="panel-media" class="panel">
+            <h2 class="section-title">Media Player</h2>
+            <div class="media-grid">
+                <div class="media-card">
+                    <h4>YouTube</h4>
+                    <p>Watch YouTube videos on your TV</p>
+                    <button class="media-btn" data-url="https://www.youtube.com/embed/dQw4w9WgXcQ">Open YouTube</button>
+                </div>
+                <div class="media-card">
+                    <h4>Custom URL</h4>
+                    <p>Play any video or audio URL</p>
+                    <button class="media-btn" data-url="custom">Enter URL</button>
+                </div>
+            </div>
+            <div class="empty-msg" id="media-custom-input" style="display:none;margin-top:16px;">
+                <input id="custom-media-url" class="search-input" type="text" placeholder="https://..." />
+                <button class="media-btn" id="load-custom-media">Load Media</button>
+            </div>
+        </section>
+        <div id="media-player" class="media-player hidden">
+            <div class="media-header">
+                <span id="media-title">Media</span>
+                <button id="close-media">Close</button>
+            </div>
+            <iframe id="media-frame" allowfullscreen allow="autoplay; encrypted-media;"></iframe>
+        </div>
+        <section id="panel-system" class="panel">
+            <h2 class="section-title">System Info</h2>
+            <div class="sys-grid">
+                <div class="sys-card">
+                    <h4>Device</h4>
+                    <div id="sys-platform" class="sub">--</div>
+                    <div id="sys-useragent" class="sub" style="font-size:12px;word-break:break-all;">--</div>
+                </div>
+                <div class="sys-card">
+                    <h4>Storage</h4>
+                    <div id="sys-storage-used" class="sub">Used: -- GB</div>
+                    <div id="sys-storage-quota" class="sub">Quota: -- GB</div>
+                    <div id="sys-storage-pct" class="sub">Usage: --%</div>
+                </div>
+                <div class="sys-card">
+                    <h4>Connection</h4>
+                    <div id="sys-online" class="sub">Online: --</div>
+                    <div id="sys-conn-type" class="sub">Type: --</div>
+                </div>
+                <div class="sys-card">
+                    <h4>Screen</h4>
+                    <div id="sys-screen" class="sub">-- x --</div>
+                    <div id="sys-color" class="sub">Color: -- bit</div>
+                </div>
+            </div>
+        </section>
+        <section id="panel-web" class="panel">
+            <h2 class="section-title">Web Browser</h2>
+            <div class="web-controls">
+                <input id="web-url" type="text" placeholder="https://example.com" />
+                <button id="web-go" class="media-btn">Go</button>
+                <button id="web-home" class="media-btn">Home</button>
+            </div>
+            <div class="web-frame-wrap">
+                <iframe id="web-frame" src="about:blank"></iframe>
+            </div>
+        </section>
+        <section id="panel-apps" class="panel">
+            <h2 class="section-title">App Store</h2>
+            <div class="apps-grid">
+                <div class="app-card">
+                    <h4>YouTube</h4>
+                    <p>Watch videos on YouTube</p>
+                    <button class="app-btn" data-url="https://www.youtube.com" data-name="YouTube">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>Netflix</h4>
+                    <p>Stream movies and shows</p>
+                    <button class="app-btn" data-url="https://www.netflix.com" data-name="Netflix">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>Twitch</h4>
+                    <p>Live streaming platform</p>
+                    <button class="app-btn" data-url="https://www.twitch.tv" data-name="Twitch">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>Spotify</h4>
+                    <p>Music and podcasts</p>
+                    <button class="app-btn" data-url="https://open.spotify.com" data-name="Spotify">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>Google</h4>
+                    <p>Search the web</p>
+                    <button class="app-btn" data-url="https://www.google.com" data-name="Google">Open</button>
+                </div>
+                <div class="app-card">
+                    <h4>GitHub</h4>
+                    <p>Code and projects</p>
+                    <button class="app-btn" data-url="https://github.com" data-name="GitHub">Open</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="panel-settings" class="panel">
+            <h2 class="section-title">Settings</h2>
+            <div class="dash-card">
+                <div class="settings-row">
+                    <label>Theme</label>
+                    <select id="theme-select">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <label>Update check interval</label>
+                    <select id="update-interval">
+                        <option value="60000">1 minute</option>
+                        <option value="300000">5 minutes</option>
+                        <option value="600000">10 minutes</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <label>Clear favorites</label>
+                    <button id="clear-favs">Clear</button>
+                </div>
+                <div class="settings-row">
+                    <label>Clear recently played</label>
+                    <button id="clear-recent">Clear</button>
+                </div>
+                <div class="settings-row">
+                    <label>Version</label>
+                    <span class="sub">Cloud Retro Gaming Hub v2.0</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="panel-help" class="panel">
+            <h2 class="section-title">Help & Controls</h2>
+            <div class="dash-card">
+                <div class="help-row"><span class="help-key">Arrow Keys / D-Pad</span><span>Navigate tabs & games</span></div>
+                <div class="help-row"><span class="help-key">Enter / OK</span><span>Select / Launch game</span></div>
+                <div class="help-row"><span class="help-key">Up (from first row)</span><span>Return to tabs</span></div>
+                <div class="help-row"><span class="help-key">Down</span><span>Enter content</span></div>
+                <div class="help-row"><span class="help-key">Back / Esc</span><span>Exit emulator / Close</span></div>
+                <div class="help-row"><span class="help-key">Left / Right (tabs)</span><span>Switch tabs</span></div>
+                <div class="help-row"><span class="help-key">Gamepad A</span><span>Select / Launch</span></div>
+                <div class="help-row"><span class="help-key">Gamepad B</span><span>Back</span></div>
+                <div class="help-row"><span class="help-key">Gamepad D-Pad</span><span>Navigate</span></div>
+            </div>
+            <div class="dash-card" style="margin-top:16px">
+                <h3>Adding Games</h3>
+                <p class="sub">Place ROM files in ./games/ and update games.json. Only use ROMs you own or that are freely distributable (homebrew/public domain).</p>
+            </div>
+        </section>
+    </main>
+    <div id="emulator-overlay" class="overlay hidden">
+        <div class="emulator-header">
+            <span id="emulator-title">Game</span>
+            <button id="close-emulator">Back (Esc)</button>
+        </div>
+        <iframe id="emulator-frame" allowfullscreen allow="autoplay; gamepad"></iframe>
+    </div>
+    <div id="help-overlay" class="help-overlay">
+        <div class="help-card">
+            <h2>Quick Help</h2>
+            <div class="help-row"><span class="help-key">?</span><span>Toggle this help</span></div>
+            <div class="help-row"><span class="help-key">Esc</span><span>Close</span></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+    <div class="hint">Tabs: Left/Right | Enter select | Up to tabs | Down to content</div>
     <script>
-        window.EJS_player = '#game';
-        window.EJS_core = 'gba';
-        window.EJS_gameUrl = './games/doom.gba';
-        window.EJS_gameName = 'Doom';
-        window.EJS_language = 'en-US';
-        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-        window.EJS_startOnLoaded = true;
+
+        // ---------- State ----------
+        const TABS = ['dashboard', 'games', 'media', 'system', 'web', 'apps', 'settings', 'help'];
+        let activeTab = 'dashboard';
+        let focusZone = 'tabs';
+        let tabFocusIndex = 0;
+
+        let GAMES = [
+            { id: 'micro-mages', title: 'Micro Mages', platform: 'NES', core: 'nes', rom: './games/micro-mages.nes', genre: 'Platformer', tags: ['Co-op', 'Homebrew'], requiresGamepad: false, homebrew: true }
+        ];
+
+        const grid = document.getElementById('game-grid');
+        const statusEl = document.getElementById('status');
+        const overlay = document.getElementById('emulator-overlay');
+        const frame = document.getElementById('emulator-frame');
+        const titleEl = document.getElementById('emulator-title');
+
+        let focused = 0;
+        let inEmulator = false;
+
+        function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        // ---------- Tabs ----------
+        function updateTabFocus() {
+            document.querySelectorAll('.tab').forEach((t, i) => {
+                t.classList.toggle('focused', i === tabFocusIndex);
+            });
+        }
+        function setActiveTab(name) {
+            activeTab = name;
+            tabFocusIndex = TABS.indexOf(name);
+            document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+            document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+            statusEl.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+            updateTabFocus();
+        }
+        document.querySelectorAll('.tab').forEach((t) => {
+            t.addEventListener('click', () => { setActiveTab(t.dataset.tab); focusZone = 'content'; focusContent(); });
+        });
+
+        function focusContent() {
+            if (activeTab === 'games') {
+                const cards = grid.querySelectorAll('.game-card');
+                if (cards.length && focused >= cards.length) focused = 0;
+                if (cards.length) {
+                    cards.forEach((c, k) => c.classList.toggle('focused', k === focused));
+                    try { cards[focused].scrollIntoView({ block: 'nearest' }); } catch (e) {}
+                }
+            }
+        }
+
+        // ---------- Dashboard: clock ----------
+        function updateClock() {
+            const now = new Date();
+            const clockEl = document.getElementById('dash-clock');
+            const dateEl = document.getElementById('dash-date');
+            if (!clockEl || !dateEl) return;
+            try {
+                const opts = { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                clockEl.textContent = now.toLocaleTimeString('el-GR', opts);
+                dateEl.textContent = now.toLocaleDateString('el-GR', { timeZone: 'Europe/Athens', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            } catch (e) {
+                clockEl.textContent = now.toLocaleTimeString();
+                dateEl.textContent = now.toLocaleDateString();
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ---------- Dashboard: storage ----------
+        async function updateStorage() {
+            const el = document.getElementById('dash-storage');
+            const fill = document.getElementById('storage-fill');
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const est = await navigator.storage.estimate();
+                    const usedGB = (est.usage / (1024**3)).toFixed(2);
+                    const quotaGB = (est.quota / (1024**3)).toFixed(2);
+                    const pct = est.quota ? Math.round((est.usage / est.quota) * 100) : 0;
+                    el.textContent = usedGB + ' GB used of ' + quotaGB + ' GB (' + pct + '%)';
+                    fill.style.width = pct + '%';
+                } else {
+                    el.textContent = 'Storage API not available';
+                }
+            } catch (e) { el.textContent = 'Storage check failed'; }
+        }
+        updateStorage();
+        setInterval(updateStorage, 30000);
+        // ---------- Dashboard: Rhodes weather ----------
+        const WMO = {
+            0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+            45:'Fog',48:'Depositing rime fog',51:'Light drizzle',53:'Moderate drizzle',55:'Dense drizzle',
+            61:'Slight rain',63:'Moderate rain',65:'Heavy rain',71:'Slight snow',73:'Moderate snow',75:'Heavy snow',
+            80:'Rain showers',81:'Moderate showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm w/ hail',99:'Thunderstorm w/ heavy hail'
+        };
+        async function updateWeather() {
+            const tempEl = document.getElementById('dash-weather');
+            const descEl = document.getElementById('dash-weather-desc');
+            if (!tempEl || !descEl) return;
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 8000);
+            try {
+                const url = 'https://api.open-meteo.com/v1/forecast?latitude=36.4349&longitude=28.2176&current_weather=true';
+                const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+                const data = await res.json();
+                const cw = data.current_weather;
+                tempEl.textContent = (cw.temperature != null ? cw.temperature.toFixed(1) : '--') + '°C';
+                descEl.textContent = (WMO[cw.weathercode] || 'Unknown') + '  •  Wind ' + (cw.windspeed != null ? cw.windspeed.toFixed(0) : '--') + ' km/h';
+            } catch (e) {
+                tempEl.textContent = '--°C';
+                descEl.textContent = 'Weather unavailable';
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+        updateWeather();
+        setInterval(updateWeather, 600000);
+
+        // ---------- Games ----------
+        async function loadGames() {
+            try {
+                const res = await fetch('./games/games.json', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length) GAMES = data;
+                }
+            } catch (e) { console.log('No games.json found, using built-in list'); }
+            renderGames();
+        }
+        function renderGames() {
+            grid.innerHTML = '';
+            if (!GAMES.length) {
+                grid.innerHTML = '<p style="color:#888">No games found. Add ROMs to ./games/ and a games.json manifest.</p>';
+                return;
+            }
+            GAMES.forEach((g, i) => {
+                const card = document.createElement('div');
+                card.className = 'game-card' + (g.requiresGamepad ? ' gamepad-required' : '');
+                card.dataset.index = i;
+                card.tabIndex = -1;
+                const tagsHtml = (g.tags || []).map(t => '<span class="tag' + (t.toLowerCase().includes('gamepad') || g.requiresGamepad ? ' gamepad' : '') + '">' + escapeHtml(t) + '</span>').join('');
+                const ctrlTag = g.requiresGamepad ? '<span class="tag gamepad">GAMEPAD</span>' : '<span class="tag remote">REMOTE</span>';
+                card.innerHTML = '<div class="fav-star">' + (isFav(g.id) ? '★' : '☆') + '</div>'
+                    + '<div class="cover">' + escapeHtml((g.platform || '?').slice(0, 6)) + '</div>'
+                    + '<div class="title">' + escapeHtml(g.title) + '</div>'
+                    + '<div class="platform">' + escapeHtml(g.platform) + (g.genre ? ' • ' + escapeHtml(g.genre) : '') + '</div>'
+                    + '<div class="game-tags">' + ctrlTag + tagsHtml + '</div>';
+                card.addEventListener('click', () => launchGame(i));
+                const star = card.querySelector('.fav-star');
+                star.addEventListener('click', (e) => { e.stopPropagation(); toggleFav(g.id); });
+                grid.appendChild(card);
+            });
+            setFocus(0);
+            applyGameFilter();
+        }
+        function cols() {
+            const s = getComputedStyle(grid).gridTemplateColumns;
+            const n = s ? s.trim().split(/\s+/).filter(Boolean).length : 1;
+            return n || 1;
+        }
+        function setFocus(i) {
+            const cards = grid.querySelectorAll('.game-card');
+            if (!cards.length) return;
+            let idx = i;
+            if (idx < 0) idx = 0;
+            if (idx >= cards.length) idx = cards.length - 1;
+            focused = idx;
+            cards.forEach((card, k) => card.classList.toggle('focused', k === focused));
+            try { cards[focused].scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+        }
+        function moveFocus(delta) {
+            const cards = grid.querySelectorAll('.game-card');
+            if (!cards.length) return;
+            let next = focused + delta;
+            if (next < 0) next = 0;
+            if (next >= cards.length) next = cards.length - 1;
+            setFocus(next);
+        }
+        // ---------- Emulator ----------
+        function buildSrcdoc(game) {
+            const core = JSON.stringify(game.core || 'nes');
+            const rom = JSON.stringify(game.rom || '');
+            return '<!DOCTYPE html><html><head><meta charset="utf-8">'
+                + '<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#game{width:100%;height:100%}</style>'
+                + '</head><body><div id="game"></div>'
+                + '<script>window.EJS_player="#game";window.EJS_core=' + core + ';window.EJS_gameUrl=' + rom
+                + ';window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";window.EJS_language="en-US";window.EJS_disableAutoLang=false;window.EJS_startOnLoaded=true;<\/script>'
+
+                + '<script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>'
+                + '</body></html>';
+        }
+        function launchGame(index) {
+            const game = GAMES[index];
+            if (!game) return;
+            if (game.requiresGamepad) {
+                showTVNotification(game.title + ' requires a gamepad. Connect a controller to play.');
+            }
+            inEmulator = true;
+            titleEl.textContent = game.title + '  (' + game.platform + ')';
+            frame.srcdoc = buildSrcdoc(game);
+            overlay.classList.remove('hidden');
+            statusEl.textContent = 'Playing: ' + game.title;
+            showTVNotification('Launching ' + game.title + '...');
+            setTimeout(() => { try { frame.focus(); } catch (e) {} }, 1200);
+        }
+        function closeEmulator() {
+            inEmulator = false;
+            frame.srcdoc = '';
+            overlay.classList.add('hidden');
+            statusEl.textContent = 'Ready';
+            showTVNotification('Returned to menu');
+        }
+        document.getElementById('close-emulator').addEventListener('click', closeEmulator);
+
+        // ---------- Toast ----------
+        function showToast(message) {
+            const t = document.getElementById('toast');
+            t.textContent = message;
+            t.classList.remove('hidden');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+        function showTVNotification(message) {
+            const api = window.webOS;
+            if (api && api.service && typeof api.service.request === 'function') {
+                try {
+                    api.service.request('luna://com.webos.notification', {
+                        method: 'createToast',
+                        parameters: { message: message },
+                        onFailure: function (err) { console.warn('toast failed', err); showToast(message); }
+                    });
+                    return;
+                } catch (err) {
+                    console.warn('webOS notification failed', err);
+                }
+            }
+            showToast(message);
+        }
+
+        // ---------- Keyboard ----------
+        function isBackKey(k) { return k === 8 || k === 27 || k === 461 || k === 10009 || k === 4097; }
+
+        window.addEventListener('keydown', (e) => {
+            const isInput = document.activeElement && document.activeElement.tagName === 'INPUT';
+            if (!isInput && (e.keyCode === 191 || e.keyCode === 72)) {
+                toggleHelp();
+                e.preventDefault();
+                return;
+            }
+            if (inEmulator) {
+                if (isBackKey(e.keyCode)) {
+                    e.preventDefault();
+                    closeEmulator();
+                }
+                return;
+            }
+            if (focusZone === 'tabs') {
+                if (e.keyCode === 37) { tabFocusIndex = (tabFocusIndex - 1 + TABS.length) % TABS.length; updateTabFocus(); e.preventDefault(); }
+                else if (e.keyCode === 39) { tabFocusIndex = (tabFocusIndex + 1) % TABS.length; updateTabFocus(); e.preventDefault(); }
+                else if (e.keyCode === 13) { setActiveTab(TABS[tabFocusIndex]); focusZone = 'content'; focusContent(); e.preventDefault(); }
+                else if (e.keyCode === 40) { focusZone = 'content'; focusContent(); e.preventDefault(); }
+                return;
+            }
+            // content zone
+            if (activeTab === 'games') {
+                const c = cols();
+                switch (e.keyCode) {
+                    case 37: e.preventDefault(); moveFocus(-1); break;
+                    case 39: e.preventDefault(); moveFocus(1); break;
+                    case 38:
+                        e.preventDefault();
+                        if (focused < c) { focusZone = 'tabs'; updateTabFocus(); }
+                        else moveFocus(-c);
+                        break;
+                    case 40: e.preventDefault(); moveFocus(c); break;
+                    case 13: e.preventDefault(); launchGame(focused); break;
+                    default:
+                        if (isBackKey(e.keyCode)) e.preventDefault();
+                }
+            } else {
+                // dashboard: Up returns to tabs
+                if (e.keyCode === 38) { focusZone = 'tabs'; updateTabFocus(); e.preventDefault(); }
+            }
+        });
+        // ---------- Gamepad ----------
+        const gpPrev = {};
+        let gpCooldown = 0;
+        function pollGamepad() {
+            requestAnimationFrame(pollGamepad);
+            if (inEmulator) return;
+            const now = performance.now();
+            if (now < gpCooldown) return;
+            const gps = (navigator.getGamepads && navigator.getGamepads()) || [];
+            for (const gp of gps) {
+                if (!gp) continue;
+                const btn = (i) => !!(gp.buttons[i] && gp.buttons[i].pressed);
+                const axes = gp.axes || [];
+                const left  = btn(14) || (axes[0] || 0) < -0.5;
+                const right = btn(15) || (axes[0] || 0) > 0.5;
+                const up    = btn(12) || (axes[1] || 0) < -0.5;
+                const down  = btn(13) || (axes[1] || 0) > 0.5;
+                const aBtn  = btn(0);
+                const bBtn  = btn(1);
+                const key = 'gp' + gp.index;
+                const prev = gpPrev[key] || {};
+                if (focusZone === 'tabs') {
+                    if (left && !prev.left)   { tabFocusIndex = (tabFocusIndex - 1 + TABS.length) % TABS.length; updateTabFocus(); gpCooldown = now + 220; }
+                    else if (right && !prev.right) { tabFocusIndex = (tabFocusIndex + 1) % TABS.length; updateTabFocus(); gpCooldown = now + 220; }
+                    if (aBtn && !prev.a) { setActiveTab(TABS[tabFocusIndex]); focusZone = 'content'; focusContent(); gpCooldown = now + 300; }
+                    if (down && !prev.down) { focusZone = 'content'; focusContent(); gpCooldown = now + 220; }
+                } else if (activeTab === 'games') {
+                    const c = cols();
+                    if (left  && !prev.left)  { moveFocus(-1);     gpCooldown = now + 180; }
+                    else if (right && !prev.right) { moveFocus(1);  gpCooldown = now + 180; }
+                    else if (up    && !prev.up) {
+                        if (focused < c) { focusZone = 'tabs'; updateTabFocus(); }
+                        else moveFocus(-c);
+                        gpCooldown = now + 180;
+                    }
+                    else if (down  && !prev.down)  { moveFocus(c);  gpCooldown = now + 180; }
+                    if (aBtn && !prev.a) { launchGame(focused); gpCooldown = now + 300; }
+                } else {
+                    if (up && !prev.up) { focusZone = 'tabs'; updateTabFocus(); gpCooldown = now + 220; }
+                }
+                gpPrev[key] = { left, right, up, down, a: aBtn, b: bBtn };
+            }
+        }
+
+        // ---------- Update checker ----------
+        let lastHash = null;
+        async function checkForUpdates() {
+            try {
+                const url = window.location.href.split('?')[0] + '?_cb=' + Date.now();
+                const res = await fetch(url, { cache: 'no-store' });
+                const text = await res.text();
+                const hash = text.length + '|' + text.slice(0, 120) + '|' + text.slice(-120);
+                if (lastHash !== null && lastHash !== hash) {
+                    showTVNotification('Update found! Reloading...');
+                    statusEl.textContent = 'Update found! Reloading...';
+                    setTimeout(() => window.location.reload(), 3000);
+                    return;
+                }
+                lastHash = hash;
+                if (focusZone === 'tabs' || activeTab === 'dashboard') {
+                    // keep status informative
+                }
+                statusEl.textContent = 'Ready  •  Last checked ' + new Date().toLocaleTimeString();
+            } catch (err) {
+                console.error('Update check failed', err);
+            }
+        }
+
+        // ---------- Favorites & Recently Played ----------
+        const FAV_KEY = 'crgh_favs';
+        const RECENT_KEY = 'crgh_recent';
+        const SETTINGS_KEY = 'crgh_settings';
+        function getFavs() { try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch (e) { return []; } }
+        function setFavs(v) { try { localStorage.setItem(FAV_KEY, JSON.stringify(v)); } catch (e) {} }
+        function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (e) { return []; } }
+        function setRecent(v) { try { localStorage.setItem(RECENT_KEY, JSON.stringify(v)); } catch (e) {} }
+        function getSettings() { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); } catch (e) { return {}; } }
+        function setSettings(v) { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(v)); } catch (e) {} }
+
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        function isFav(id) { return getFavs().indexOf(id) !== -1; }
+        function toggleFav(id) {
+            const favs = getFavs();
+            const idx = favs.indexOf(id);
+            if (idx === -1) favs.push(id); else favs.splice(idx, 1);
+            setFavs(favs);
+            renderGames();
+        }
+        function addRecent(game) {
+            const recent = getRecent().filter(r => r.id !== game.id);
+            recent.unshift({ id: game.id, title: game.title, platform: game.platform });
+            setRecent(recent.slice(0, 8));
+            renderRecent();
+        }
+        function renderRecent() {
+            const el = document.getElementById('recent-list');
+            if (!el) return;
+            const recent = getRecent();
+            if (!recent.length) { el.textContent = 'None yet'; return; }
+            el.innerHTML = recent.map(r => '<div class="recent-item" data-id="' + r.id + '">' + escapeHtml(r.title) + ' <span class="sub">(' + escapeHtml(r.platform) + ')</span></div>').join('');
+            el.querySelectorAll('.recent-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const g = GAMES.find(x => x.id === item.dataset.id);
+                    if (g) launchGame(GAMES.indexOf(g));
+                });
+            });
+        }
+
+        function applyGameFilter() {
+            const cards = grid.querySelectorAll('.game-card');
+            cards.forEach((card, i) => {
+                const g = GAMES[i];
+                if (!g) return;
+                let show = true;
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    show = g.title.toLowerCase().indexOf(q) !== -1 || (g.platform || '').toLowerCase().indexOf(q) !== -1 || (g.genre || '').toLowerCase().indexOf(q) !== -1;
+                }
+                if (show && currentFilter === 'fav') show = isFav(g.id);
+                if (show && currentFilter === 'nes') show = g.platform === 'NES';
+                if (show && currentFilter === 'gb') show = g.platform === 'Game Boy';
+                if (show && currentFilter === 'gamepad') show = g.requiresGamepad === true;
+                if (show && currentFilter === 'remote') show = g.requiresGamepad !== true;
+                card.style.display = show ? '' : 'none';
+            });
+        }
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => { searchQuery = e.target.value; applyGameFilter(); });
+        }
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (btn.id === 'filter-all') currentFilter = 'all';
+                else if (btn.id === 'filter-fav') currentFilter = 'fav';
+                else if (btn.id === 'filter-nes') currentFilter = 'nes';
+                else if (btn.id === 'filter-gb') currentFilter = 'gb';
+                else if (btn.id === 'filter-gamepad') currentFilter = 'gamepad';
+                else if (btn.id === 'filter-remote') currentFilter = 'remote';
+                applyGameFilter();
+            });
+        });
+        const _origRenderGames = renderGames;
+        renderGames = function() {
+            grid.innerHTML = '';
+            if (!GAMES.length) {
+                grid.innerHTML = '<p style="color:#888">No games found. Add ROMs to ./games/ and a games.json manifest.</p>';
+                return;
+            }
+            GAMES.forEach((g, i) => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.dataset.index = i;
+                card.tabIndex = -1;
+                card.innerHTML = '<div class="fav-star">' + (isFav(g.id) ? '★' : '☆') + '</div>'
+                    + '<div class="cover">' + escapeHtml((g.platform || '?').slice(0, 6)) + '</div>'
+                    + '<div class="title">' + escapeHtml(g.title) + '</div>'
+                    + '<div class="platform">' + escapeHtml(g.platform) + (g.genre ? ' • ' + escapeHtml(g.genre) : '') + '</div>';
+                card.addEventListener('click', () => launchGame(i));
+                const star = card.querySelector('.fav-star');
+                star.addEventListener('click', (e) => { e.stopPropagation(); toggleFav(g.id); });
+                grid.appendChild(card);
+            });
+            setFocus(0);
+            applyGameFilter();
+        };
+
+        const _origLaunch = launchGame;
+        launchGame = function(index) {
+            const game = GAMES[index];
+            if (game) addRecent(game);
+            return _origLaunch(index);
+        };
+
+        // ---------- Network status ----------
+        function updateNetStatus() {
+            const el = document.getElementById('net-status');
+            if (!el) return;
+            if (navigator.onLine) { el.className = 'net-status online'; el.title = 'Online'; }
+            else { el.className = 'net-status offline'; el.title = 'Offline'; }
+        }
+        window.addEventListener('online', updateNetStatus);
+        window.addEventListener('offline', updateNetStatus);
+        updateNetStatus();
+
+        // ---------- Settings ----------
+        const themeSelect = document.getElementById('theme-select');
+        const updateIntervalSelect = document.getElementById('update-interval');
+        if (themeSelect) {
+            const s = getSettings();
+            if (s.theme) themeSelect.value = s.theme;
+            themeSelect.addEventListener('change', () => {
+                const s = getSettings();
+                s.theme = themeSelect.value;
+                setSettings(s);
+                applyTheme(s.theme);
+            });
+            applyTheme(s.theme || 'dark');
+        }
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.body.style.background = '#f0f0f5';
+                document.body.style.color = '#111';
+            } else {
+                document.body.style.background = '#0a0a14';
+                document.body.style.color = '#fff';
+            }
+        }
+        if (updateIntervalSelect) {
+            const s = getSettings();
+            if (s.updateInterval) updateIntervalSelect.value = s.updateInterval;
+            updateIntervalSelect.addEventListener('change', () => {
+                const s = getSettings();
+                s.updateInterval = updateIntervalSelect.value;
+                setSettings(s);
+                showTVNotification('Update interval saved. Reload to apply.');
+            });
+        }
+        const clearFavsBtn = document.getElementById('clear-favs');
+        if (clearFavsBtn) clearFavsBtn.addEventListener('click', () => { setFavs([]); renderGames(); showTVNotification('Favorites cleared'); });
+        const clearRecentBtn = document.getElementById('clear-recent');
+        if (clearRecentBtn) clearRecentBtn.addEventListener('click', () => { setRecent([]); renderRecent(); showTVNotification('Recently played cleared'); });
+
+        // ---------- Help overlay ----------
+        const helpOverlay = document.getElementById('help-overlay');
+        function toggleHelp() {
+            if (helpOverlay) helpOverlay.classList.toggle('show');
+        }
+        if (helpOverlay) helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.classList.remove('show'); });
+
+        // ---------- Gamepad connect/disconnect ----------
+        window.addEventListener('gamepadconnected', (e) => {
+            showTVNotification('Controller connected: ' + (e.gamepad.id || 'Gamepad'));
+        });
+        window.addEventListener('gamepaddisconnected', (e) => {
+            showTVNotification('Controller disconnected');
+        });
+
+        // ---------- Init ----------
+        window.addEventListener('load', async () => {
+            showTVNotification('Cloud Retro Gaming Hub loaded');
+            await loadGames();
+            renderRecent();
+            requestAnimationFrame(pollGamepad);
+            const interval = parseInt((getSettings().updateInterval) || '60000', 10);
+            await checkForUpdates();
+            setInterval(checkForUpdates, interval);
+            focusZone = 'tabs';
+            updateTabFocus();
+        });
+
     </script>
-    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 </body>
 </html>
