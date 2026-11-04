@@ -508,10 +508,10 @@
             if (game.requiresGamepad) {
                 showTVNotification(game.title + ' requires a gamepad. Connect a controller to play.');
             }
-            inEmulator = true;
+            inEmulator = false;
             titleEl.textContent = game.title + '  (' + game.platform + ')';
-            frame.srcdoc = buildSrcdoc(game);
-            overlay.classList.remove('hidden');
+            frame.src = './games/' + (game.rom || game.id + '.nes');
+            overlay.classList.add('hidden');
             statusEl.textContent = 'Playing: ' + game.title;
             showTVNotification('Launching ' + game.title + '...');
             setTimeout(() => { try { frame.focus(); } catch (e) {} }, 1200);
